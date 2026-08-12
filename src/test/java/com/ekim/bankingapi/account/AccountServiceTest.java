@@ -6,6 +6,7 @@ import com.ekim.bankingapi.customer.CustomerService;
 import com.ekim.bankingapi.exception.DuplicateResourceException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
+import com.ekim.bankingapi.notification.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,9 @@ class AccountServiceTest {
 
     @Mock
     private BranchService branchService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private AccountService accountService;

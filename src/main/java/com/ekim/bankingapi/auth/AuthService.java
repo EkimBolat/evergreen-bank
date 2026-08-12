@@ -6,6 +6,8 @@ import com.ekim.bankingapi.customer.CustomerService;
 import com.ekim.bankingapi.exception.DuplicateResourceException;
 import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
+import com.ekim.bankingapi.notification.NotificationService;
+import com.ekim.bankingapi.notification.NotificationType;
 import com.ekim.bankingapi.security.JwtService;
 import com.ekim.bankingapi.security.LoginAttemptService;
 import com.ekim.bankingapi.security.RefreshTokenService;
@@ -26,6 +28,7 @@ public class AuthService {
     private final LoginAttemptService loginAttemptService;
     private final RefreshTokenService refreshTokenService;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     public AuthResponse register(RegisterRequest request) {
         Customer customer = customerService.findCustomerEntityByNationalId(request.getNationalId());
@@ -74,14 +77,18 @@ public class AuthService {
         User user = userRepository.findByCustomerId(customer.getId())
                 .orElseThrow(() -> {
                     log.warn("Login failed - no account for national ID: nationalId={}", nationalId);
-                    loginAttemptService.recordFailedAttempt(nationalId);
+                    if (loginAttemptService.recordFailedAttempt(nationalId)) {
+                        notifyAccountLocked(customer);
+                    }
                     auditLogService.log("User", null, "LOGIN_FAILED", nationalId, "No account for national ID");
                     return new InvalidCredentialsException("Invalid national ID or password");
                 });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             log.warn("Login failed - wrong password: nationalId={}", nationalId);
-            loginAttemptService.recordFailedAttempt(nationalId);
+            if (loginAttemptService.recordFailedAttempt(nationalId)) {
+                notifyAccountLocked(customer);
+            }
             auditLogService.log("User", user.getId(), "LOGIN_FAILED", nationalId, "Wrong password");
             throw new InvalidCredentialsException("Invalid national ID or password");
         }
@@ -107,5 +114,10 @@ public class AuthService {
         log.info("Token refreshed: userId={}", user.getId());
 
         return new AuthResponse(user.getId(), user.getCustomer().getId(), user.getEmail(), "Token refreshed", newAccessToken, user.getRole(), newRefreshToken);
+    }
+
+    private void notifyAccountLocked(Customer customer) {
+        notificationService.notify(customer.getId(), NotificationType.ACCOUNT_LOCKED,
+                "Account Locked", "Your account was locked due to too many failed login attempts. Please try again in 15 minutes.");
     }
 }

@@ -6,6 +6,8 @@ import com.ekim.bankingapi.audit.AuditLogService;
 import com.ekim.bankingapi.exception.InsufficientBalanceException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.nature.NatureService;
+import com.ekim.bankingapi.notification.NotificationService;
+import com.ekim.bankingapi.notification.NotificationType;
 import com.ekim.bankingapi.transaction.Transaction;
 import com.ekim.bankingapi.transaction.TransactionRepository;
 import com.ekim.bankingapi.transaction.TransactionType;
@@ -26,6 +28,7 @@ public class TransferService {
     private final TransactionRepository transactionRepository;
     private final NatureService natureService;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     @Transactional
     public TransferResponse transfer(TransferRequest request) {
@@ -66,6 +69,11 @@ public class TransferService {
 
         auditLogService.log("Transfer", savedTransfer.getId(), "TRANSFER",
                 "From: " + fromAccount.getAccountNumber() + ", To: " + toAccount.getAccountNumber() + ", Amount: " + amount);
+
+        notificationService.notify(fromAccount.getCustomer().getId(), NotificationType.TRANSFER_SENT,
+                "Transfer Sent", "You sent " + amount + " to account " + toAccount.getAccountNumber());
+        notificationService.notify(toAccount.getCustomer().getId(), NotificationType.TRANSFER_RECEIVED,
+                "Transfer Received", "You received " + amount + " from account " + fromAccount.getAccountNumber());
 
         log.info("Transfer successful: transferId={}, fromAccountId={}, toAccountId={}, amount={}",
                 savedTransfer.getId(), fromAccountId, toAccountId, amount);

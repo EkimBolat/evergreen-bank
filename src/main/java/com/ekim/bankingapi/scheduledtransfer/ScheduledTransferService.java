@@ -4,6 +4,8 @@ import com.ekim.bankingapi.account.Account;
 import com.ekim.bankingapi.account.AccountService;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
+import com.ekim.bankingapi.notification.NotificationService;
+import com.ekim.bankingapi.notification.NotificationType;
 import com.ekim.bankingapi.transfer.TransferRequest;
 import com.ekim.bankingapi.transfer.TransferService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class ScheduledTransferService {
     private final ScheduledTransferRepository scheduledTransferRepository;
     private final AccountService accountService;
     private final TransferService transferService;
+    private final NotificationService notificationService;
 
     public ScheduledTransferResponse createScheduledTransfer(ScheduledTransferRequest request) {
         if (request.getFromAccountId().equals(request.getToAccountId())) {
@@ -75,9 +78,16 @@ public class ScheduledTransferService {
                 scheduled.setNextExecutionDate(calculateNextDate(scheduled.getNextExecutionDate(), scheduled.getFrequency()));
                 scheduledTransferRepository.save(scheduled);
 
+                notificationService.notify(scheduled.getFromAccount().getCustomer().getId(), NotificationType.SCHEDULED_TRANSFER_EXECUTED,
+                        "Scheduled Transfer Executed", "Your scheduled transfer of " + scheduled.getAmount() +
+                                " to account " + scheduled.getToAccount().getAccountNumber() + " was completed.");
+
                 log.info("Scheduled transfer executed successfully: id={}", scheduled.getId());
             } catch (Exception e) {
                 log.error("Scheduled transfer failed: id={}, reason={}", scheduled.getId(), e.getMessage());
+                notificationService.notify(scheduled.getFromAccount().getCustomer().getId(), NotificationType.SCHEDULED_TRANSFER_FAILED,
+                        "Scheduled Transfer Failed", "Your scheduled transfer of " + scheduled.getAmount() +
+                                " to account " + scheduled.getToAccount().getAccountNumber() + " failed: " + e.getMessage());
             }
         }
     }

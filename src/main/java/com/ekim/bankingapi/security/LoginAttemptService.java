@@ -32,13 +32,15 @@ public class LoginAttemptService {
         }
     }
 
-    public void recordFailedAttempt(String nationalId) {
+    public boolean recordFailedAttempt(String nationalId) {
         int attempts = attemptCounts.computeIfAbsent(nationalId, k -> new AtomicInteger(0)).incrementAndGet();
 
         if (attempts >= MAX_ATTEMPTS) {
             lockedUntil.put(nationalId, Instant.now().plusSeconds(LOCK_DURATION_MINUTES * 60));
             log.warn("Account locked due to too many failed attempts: nationalId={}", nationalId);
+            return true;
         }
+        return false;
     }
 
     public void recordSuccessfulLogin(String nationalId) {

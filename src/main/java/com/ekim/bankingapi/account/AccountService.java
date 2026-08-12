@@ -8,6 +8,8 @@ import com.ekim.bankingapi.exception.DuplicateResourceException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import com.ekim.bankingapi.exception.TransactionLimitExceededException;
+import com.ekim.bankingapi.notification.NotificationService;
+import com.ekim.bankingapi.notification.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final CustomerService customerService;
     private final BranchService branchService;
+    private final NotificationService notificationService;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     public AccountResponse createAccount(Long customerId, AccountRequest request) {
@@ -74,6 +77,9 @@ public class AccountService {
 
         BigDecimal newDailyTotal = account.getDailyWithdrawnAmount().add(amount);
         if (newDailyTotal.compareTo(account.getDailyLimit()) > 0) {
+            notificationService.notify(account.getCustomer().getId(), NotificationType.LIMIT_EXCEEDED,
+                    "Daily Limit Exceeded", "An attempted withdrawal of " + amount + " on account " +
+                            account.getAccountNumber() + " exceeded your daily limit of " + account.getDailyLimit());
             throw new TransactionLimitExceededException(
                     "Daily withdrawal limit exceeded. Limit: " + account.getDailyLimit() +
                             ", already used: " + account.getDailyWithdrawnAmount());
@@ -81,6 +87,9 @@ public class AccountService {
 
         BigDecimal newMonthlyTotal = account.getMonthlyWithdrawnAmount().add(amount);
         if (newMonthlyTotal.compareTo(account.getMonthlyLimit()) > 0) {
+            notificationService.notify(account.getCustomer().getId(), NotificationType.LIMIT_EXCEEDED,
+                    "Monthly Limit Exceeded", "An attempted withdrawal of " + amount + " on account " +
+                            account.getAccountNumber() + " exceeded your monthly limit of " + account.getMonthlyLimit());
             throw new TransactionLimitExceededException(
                     "Monthly withdrawal limit exceeded. Limit: " + account.getMonthlyLimit() +
                             ", already used: " + account.getMonthlyWithdrawnAmount());

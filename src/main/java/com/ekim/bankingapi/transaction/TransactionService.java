@@ -6,6 +6,8 @@ import com.ekim.bankingapi.audit.AuditLogService;
 import com.ekim.bankingapi.exception.InsufficientBalanceException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.nature.NatureService;
+import com.ekim.bankingapi.notification.NotificationService;
+import com.ekim.bankingapi.notification.NotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,6 +26,7 @@ public class TransactionService {
     private final AccountService accountService;
     private final NatureService natureService;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     @Transactional
     public TransactionResponse deposit(Long accountId, BigDecimal amount) {
@@ -39,6 +42,9 @@ public class TransactionService {
 
         auditLogService.log("Transaction", transaction.getId(), "DEPOSIT",
                 "Account: " + account.getAccountNumber() + ", Amount: " + amount);
+
+        notificationService.notify(account.getCustomer().getId(), NotificationType.DEPOSIT,
+                "Deposit Received", "Your account " + account.getAccountNumber() + " was credited " + amount + ". New balance: " + newBalance);
 
         log.info("Deposit successful: accountId={}, amount={}, newBalance={}", accountId, amount, newBalance);
         return TransactionResponse.fromEntity(transaction);
@@ -66,6 +72,9 @@ public class TransactionService {
 
         auditLogService.log("Transaction", transaction.getId(), "WITHDRAWAL",
                 "Account: " + account.getAccountNumber() + ", Amount: " + amount);
+
+        notificationService.notify(account.getCustomer().getId(), NotificationType.WITHDRAWAL,
+                "Withdrawal Completed", "Your account " + account.getAccountNumber() + " was debited " + amount + ". New balance: " + newBalance);
 
         log.info("Withdrawal successful: accountId={}, amount={}, newBalance={}", accountId, amount, newBalance);
         return TransactionResponse.fromEntity(transaction);

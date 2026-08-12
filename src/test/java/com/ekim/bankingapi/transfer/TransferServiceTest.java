@@ -7,6 +7,7 @@ import com.ekim.bankingapi.customer.Customer;
 import com.ekim.bankingapi.exception.InsufficientBalanceException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.nature.NatureService;
+import com.ekim.bankingapi.notification.NotificationService;
 import com.ekim.bankingapi.transaction.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,9 @@ class TransferServiceTest {
 
     @Mock
     private AuditLogService auditLogService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private TransferService transferService;

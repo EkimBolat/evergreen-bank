@@ -6,6 +6,7 @@ import com.ekim.bankingapi.customer.CustomerService;
 import com.ekim.bankingapi.exception.DuplicateResourceException;
 import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
+import com.ekim.bankingapi.notification.NotificationService;
 import com.ekim.bankingapi.security.JwtService;
 import com.ekim.bankingapi.security.LoginAttemptService;
 import com.ekim.bankingapi.security.RefreshTokenService;
@@ -46,6 +47,9 @@ class AuthServiceTest {
 
     @Mock
     private AuditLogService auditLogService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private AuthService authService;
