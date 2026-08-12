@@ -1,5 +1,7 @@
 package com.ekim.bankingapi.notification;
 
+import com.ekim.bankingapi.auth.User;
+import com.ekim.bankingapi.auth.UserRepository;
 import com.ekim.bankingapi.customer.Customer;
 import com.ekim.bankingapi.customer.CustomerService;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
@@ -13,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -31,6 +34,12 @@ class NotificationServiceTest {
 
     @Mock
     private CustomerService customerService;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private SimpMessagingTemplate messagingTemplate;
 
     @InjectMocks
     private NotificationService notificationService;
@@ -64,6 +73,38 @@ class NotificationServiceTest {
                         && n.getType() == NotificationType.DEPOSIT
                         && n.getTitle().equals("Deposit Received")
         ));
+    }
+
+    @Test
+    void notify_shouldPushOverWebSocket_whenCustomerHasLoginAccount() {
+        Notification saved = new Notification();
+        saved.setId(10L);
+        saved.setCustomer(customer);
+        saved.setType(NotificationType.DEPOSIT);
+        saved.setTitle("Deposit Received");
+        saved.setMessage("You received 100");
+
+        User user = new User();
+        user.setEmail("ahmet@example.com");
+
+        when(customerService.findCustomerEntityById(1L)).thenReturn(customer);
+        when(notificationRepository.save(any(Notification.class))).thenReturn(saved);
+        when(userRepository.findByCustomerId(1L)).thenReturn(Optional.of(user));
+
+        notificationService.notify(1L, NotificationType.DEPOSIT, "Deposit Received", "You received 100");
+
+        verify(messagingTemplate).convertAndSendToUser(
+                eq("ahmet@example.com"), eq("/queue/notifications"), any(NotificationResponse.class));
+    }
+
+    @Test
+    void notify_shouldNotPush_whenCustomerHasNoLoginAccount() {
+        when(customerService.findCustomerEntityById(1L)).thenReturn(customer);
+        when(userRepository.findByCustomerId(1L)).thenReturn(Optional.empty());
+
+        notificationService.notify(1L, NotificationType.DEPOSIT, "Deposit Received", "You received 100");
+
+        verify(messagingTemplate, never()).convertAndSendToUser(anyString(), anyString(), any());
     }
 
     @Test

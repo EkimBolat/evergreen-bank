@@ -1,11 +1,13 @@
 package com.ekim.bankingapi.notification;
 
+import com.ekim.bankingapi.auth.UserRepository;
 import com.ekim.bankingapi.customer.Customer;
 import com.ekim.bankingapi.customer.CustomerService;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,8 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final CustomerService customerService;
+    private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public void notify(Long customerId, NotificationType type, String title, String message) {
         Customer customer = customerService.findCustomerEntityById(customerId);
@@ -25,7 +29,11 @@ public class NotificationService {
         notification.setType(type);
         notification.setTitle(title);
         notification.setMessage(message);
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        userRepository.findByCustomerId(customerId).ifPresent(user ->
+                messagingTemplate.convertAndSendToUser(user.getEmail(), "/queue/notifications",
+                        NotificationResponse.fromEntity(saved)));
     }
 
     public Page<NotificationResponse> getMyNotifications(Pageable pageable) {

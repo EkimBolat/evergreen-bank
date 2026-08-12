@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/branches").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/accounts/*/limits").hasRole("ADMIN")
                         .requestMatchers("/api/v1/audit-logs/**").hasRole("ADMIN")
