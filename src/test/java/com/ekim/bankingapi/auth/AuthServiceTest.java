@@ -7,17 +7,23 @@ import com.ekim.bankingapi.exception.DuplicateResourceException;
 import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import com.ekim.bankingapi.notification.NotificationService;
+import com.ekim.bankingapi.notification.NotificationType;
 import com.ekim.bankingapi.security.JwtService;
 import com.ekim.bankingapi.security.LoginAttemptService;
 import com.ekim.bankingapi.security.RefreshTokenService;
+import com.ekim.bankingapi.security.TotpService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,6 +57,9 @@ class AuthServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private TotpService totpService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -61,6 +70,11 @@ class AuthServiceTest {
         customer = new Customer();
         customer.setId(1L);
         customer.setNationalId("12345678901");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -164,5 +178,181 @@ class AuthServiceTest {
                 .isInstanceOf(InvalidCredentialsException.class);
 
         verify(loginAttemptService).recordFailedAttempt("00000000000");
+    }
+
+    @Test
+    void login_shouldReturnPendingTwoFactor_whenTwoFactorEnabled() {
+        LoginRequest request = new LoginRequest();
+        request.setNationalId("12345678901");
+        request.setPassword("plain-password");
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setPassword("hashed-password");
+        user.setCustomer(customer);
+        user.setTwoFactorEnabled(true);
+
+        when(customerService.findCustomerEntityByNationalId("12345678901")).thenReturn(customer);
+        when(userRepository.findByCustomerId(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("plain-password", "hashed-password")).thenReturn(true);
+        when(jwtService.generateTwoFactorPendingToken("ahmet@example.com")).thenReturn("pending-token");
+
+        AuthResponse response = authService.login(request);
+
+        assertThat(response.isTwoFactorRequired()).isTrue();
+        assertThat(response.getPendingToken()).isEqualTo("pending-token");
+        assertThat(response.getToken()).isNull();
+        verify(refreshTokenService, never()).createRefreshToken(any());
+    }
+
+    @Test
+    void verifyTwoFactor_shouldReturnFullTokens_whenCodeIsValid() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        user.setTwoFactorEnabled(true);
+        user.setTwoFactorSecret("SECRET");
+
+        TwoFactorVerifyRequest request = new TwoFactorVerifyRequest();
+        request.setPendingToken("pending-token");
+        request.setCode("123456");
+
+        when(jwtService.isTwoFactorPendingToken("pending-token")).thenReturn(true);
+        when(jwtService.extractEmail("pending-token")).thenReturn("ahmet@example.com");
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+        when(totpService.verifyCode("SECRET", "123456")).thenReturn(true);
+        when(jwtService.generateToken(anyString(), anyLong(), anyLong(), anyString())).thenReturn("fake-jwt-token");
+        when(refreshTokenService.createRefreshToken(user)).thenReturn("fake-refresh-token");
+
+        AuthResponse response = authService.verifyTwoFactor(request);
+
+        assertThat(response.isTwoFactorRequired()).isFalse();
+        assertThat(response.getToken()).isEqualTo("fake-jwt-token");
+        assertThat(response.getRefreshToken()).isEqualTo("fake-refresh-token");
+    }
+
+    @Test
+    void verifyTwoFactor_shouldThrow_whenCodeIsInvalid() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        user.setTwoFactorEnabled(true);
+        user.setTwoFactorSecret("SECRET");
+
+        TwoFactorVerifyRequest request = new TwoFactorVerifyRequest();
+        request.setPendingToken("pending-token");
+        request.setCode("000000");
+
+        when(jwtService.isTwoFactorPendingToken("pending-token")).thenReturn(true);
+        when(jwtService.extractEmail("pending-token")).thenReturn("ahmet@example.com");
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+        when(totpService.verifyCode("SECRET", "000000")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.verifyTwoFactor(request))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void verifyTwoFactor_shouldThrow_whenPendingTokenInvalid() {
+        TwoFactorVerifyRequest request = new TwoFactorVerifyRequest();
+        request.setPendingToken("bad-token");
+        request.setCode("123456");
+
+        when(jwtService.isTwoFactorPendingToken("bad-token")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.verifyTwoFactor(request))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void setupTwoFactor_shouldGenerateAndPersistSecret_forCurrentUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        authenticateAs("ahmet@example.com");
+
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+        when(totpService.generateSecret()).thenReturn("NEWSECRET");
+        when(totpService.getOtpAuthUri("ahmet@example.com", "NEWSECRET")).thenReturn("otpauth://totp/EvergreenBank:ahmet@example.com");
+
+        TwoFactorSetupResponse response = authService.setupTwoFactor();
+
+        assertThat(response.getSecret()).isEqualTo("NEWSECRET");
+        assertThat(user.getTwoFactorSecret()).isEqualTo("NEWSECRET");
+        assertThat(user.isTwoFactorEnabled()).isFalse();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void enableTwoFactor_shouldEnable_whenCodeIsValid() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        user.setTwoFactorSecret("SECRET");
+        authenticateAs("ahmet@example.com");
+
+        TwoFactorCodeRequest request = new TwoFactorCodeRequest();
+        request.setCode("123456");
+
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+        when(totpService.verifyCode("SECRET", "123456")).thenReturn(true);
+
+        authService.enableTwoFactor(request);
+
+        assertThat(user.isTwoFactorEnabled()).isTrue();
+        verify(notificationService).notify(eq(1L), eq(NotificationType.TWO_FACTOR_ENABLED), anyString(), anyString());
+    }
+
+    @Test
+    void enableTwoFactor_shouldThrow_whenCodeIsInvalid() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        user.setTwoFactorSecret("SECRET");
+        authenticateAs("ahmet@example.com");
+
+        TwoFactorCodeRequest request = new TwoFactorCodeRequest();
+        request.setCode("000000");
+
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+        when(totpService.verifyCode("SECRET", "000000")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.enableTwoFactor(request))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        assertThat(user.isTwoFactorEnabled()).isFalse();
+    }
+
+    @Test
+    void disableTwoFactor_shouldDisableAndClearSecret_whenCodeIsValid() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        user.setTwoFactorEnabled(true);
+        user.setTwoFactorSecret("SECRET");
+        authenticateAs("ahmet@example.com");
+
+        TwoFactorCodeRequest request = new TwoFactorCodeRequest();
+        request.setCode("123456");
+
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+        when(totpService.verifyCode("SECRET", "123456")).thenReturn(true);
+
+        authService.disableTwoFactor(request);
+
+        assertThat(user.isTwoFactorEnabled()).isFalse();
+        assertThat(user.getTwoFactorSecret()).isNull();
+    }
+
+    private void authenticateAs(String email) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(email, null, List.of()));
     }
 }

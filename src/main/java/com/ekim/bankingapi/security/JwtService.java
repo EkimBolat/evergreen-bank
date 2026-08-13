@@ -19,6 +19,9 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private long expiration;
 
+    private static final long TWO_FACTOR_PENDING_EXPIRATION_MS = 5 * 60 * 1000;
+    private static final String TWO_FACTOR_PENDING_PURPOSE = "2FA_PENDING";
+
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
@@ -33,6 +36,25 @@ public class JwtService {
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    public String generateTwoFactorPendingToken(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("purpose", TWO_FACTOR_PENDING_PURPOSE)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + TWO_FACTOR_PENDING_EXPIRATION_MS))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    public boolean isTwoFactorPendingToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            return TWO_FACTOR_PENDING_PURPOSE.equals(claims.get("purpose", String.class)) && !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public String extractEmail(String token) {

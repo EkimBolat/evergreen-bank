@@ -38,6 +38,11 @@ public class User {
     @JoinColumn(name = "customer_id", nullable = false, unique = true)
     private Customer customer;
 
+    @Column(nullable = false)
+    private boolean twoFactorEnabled = false;
+
+    private String twoFactorSecret;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
