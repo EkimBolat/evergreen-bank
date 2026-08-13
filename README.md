@@ -33,10 +33,15 @@ Every deposit, withdrawal, and transfer earns customers **Nature Points**. Once 
 ## ✨ Key Features
 
 - 🔐 **JWT Authentication** with role-based access control (Customer / Admin)
+- 🔑 **TOTP-based Two-Factor Authentication**, compatible with Google Authenticator/Authy
 - 🛡️ **Fraud protection**: brute-force login lockout, daily/monthly withdrawal limits
 - 🌱 **Nature Points**: gamified sustainability system with anti-abuse safeguards
 - 🏦 **Full banking core**: accounts (Checking/Savings), transfers, transaction history, branches
+- 💳 **Debit card management**: issuance, masked listing, block/activate
 - ⏰ **Scheduled recurring transfers** (daily/weekly/monthly), processed via nightly batch job
+- 📈 **Monthly interest accrual** for savings accounts, processed via nightly batch job
+- 🔔 **In-app notifications**, pushed live over WebSocket (STOMP) in addition to REST polling
+- 📄 **CSV statement export** for account transaction history
 - 🐳 **Dockerized**, fully tested (unit + integration), documented via Swagger
 
 ---
@@ -85,6 +90,11 @@ The API will be available at `http://localhost:8080`, with interactive documenta
 - [x] CI/CD Pipeline + Test Coverage Reporting
 - [x] Health Check Endpoint
 - [x] Scheduled/Recurring Transfers
+- [x] Monthly Interest Accrual (Savings Accounts)
+- [x] In-App Notifications + Real-Time WebSocket Push
+- [x] Debit Card Management (Issue / Block / Activate)
+- [x] CSV Statement Export
+- [x] TOTP Two-Factor Authentication
 
 ---
 
