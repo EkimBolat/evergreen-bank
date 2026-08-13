@@ -6,6 +6,7 @@ import com.ekim.bankingapi.audit.AuditLogService;
 import com.ekim.bankingapi.customer.Customer;
 import com.ekim.bankingapi.exception.InsufficientBalanceException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
+import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import com.ekim.bankingapi.nature.NatureService;
 import com.ekim.bankingapi.notification.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -96,5 +100,33 @@ class TransactionServiceTest {
                 .isInstanceOf(InsufficientBalanceException.class);
 
         verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void exportStatementCsv_shouldContainHeaderAndEachTransaction() {
+        Transaction transaction = new Transaction();
+        transaction.setAccount(account);
+        transaction.setType(TransactionType.DEPOSIT);
+        transaction.setAmount(BigDecimal.valueOf(100));
+        transaction.setBalanceAfter(BigDecimal.valueOf(600));
+        transaction.setTimestamp(LocalDateTime.of(2026, 1, 15, 10, 30));
+
+        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(transactionRepository.findByAccountIdOrderByTimestampDesc(1L)).thenReturn(List.of(transaction));
+
+        byte[] csv = transactionService.exportStatementCsv(1L);
+        String content = new String(csv, StandardCharsets.UTF_8);
+
+        assertThat(content).startsWith("Date,Type,Amount,Balance After,Transfer Id\n");
+        assertThat(content).contains("2026-01-15T10:30,DEPOSIT,100,600,\n");
+    }
+
+    @Test
+    void exportStatementCsv_shouldThrow_whenAccountNotFound() {
+        when(accountService.findAccountEntityById(999L))
+                .thenThrow(new ResourceNotFoundException("Account not found with id: 999"));
+
+        assertThatThrownBy(() -> transactionService.exportStatementCsv(999L))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }

@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -83,6 +85,25 @@ public class TransactionService {
     public Page<TransactionResponse> getTransactionHistory(Long accountId, Pageable pageable) {
         return transactionRepository.findByAccountId(accountId, pageable)
                 .map(TransactionResponse::fromEntity);
+    }
+
+    public byte[] exportStatementCsv(Long accountId) {
+        accountService.findAccountEntityById(accountId);
+        List<Transaction> transactions = transactionRepository.findByAccountIdOrderByTimestampDesc(accountId);
+        return buildCsv(transactions).getBytes(StandardCharsets.UTF_8);
+    }
+
+    private String buildCsv(List<Transaction> transactions) {
+        StringBuilder csv = new StringBuilder("Date,Type,Amount,Balance After,Transfer Id\n");
+        for (Transaction transaction : transactions) {
+            csv.append(transaction.getTimestamp()).append(',')
+                    .append(transaction.getType()).append(',')
+                    .append(transaction.getAmount()).append(',')
+                    .append(transaction.getBalanceAfter()).append(',')
+                    .append(transaction.getTransferId() == null ? "" : transaction.getTransferId())
+                    .append('\n');
+        }
+        return csv.toString();
     }
 
     private Transaction saveTransaction(Account account, TransactionType type, BigDecimal amount, BigDecimal balanceAfter) {
