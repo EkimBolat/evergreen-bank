@@ -60,7 +60,7 @@ public class AuthService {
 
         log.info("Registration successful: userId={}, customerId={}", saved.getId(), customer.getId());
 
-        return new AuthResponse(saved.getId(), customer.getId(), saved.getEmail(), "Registration successful", token, saved.getRole(), refreshToken, false, null);
+        return AuthResponse.authenticated(saved.getId(), customer.getId(), saved.getEmail(), "Registration successful", token, saved.getRole(), refreshToken);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -113,7 +113,7 @@ public class AuthService {
 
         log.info("Login successful: userId={}, nationalId={}, role={}", user.getId(), nationalId, user.getRole());
 
-        return new AuthResponse(user.getId(), customer.getId(), user.getEmail(), "Login successful", token, user.getRole(), refreshToken, false, null);
+        return AuthResponse.authenticated(user.getId(), customer.getId(), user.getEmail(), "Login successful", token, user.getRole(), refreshToken);
     }
 
     public AuthResponse verifyTwoFactor(TwoFactorVerifyRequest request) {
@@ -125,11 +125,19 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid or expired two-factor session"));
 
+        String nationalId = user.getCustomer().getNationalId();
+        loginAttemptService.checkNotLocked(nationalId);
+
         if (!totpService.verifyCode(user.getTwoFactorSecret(), request.getCode())) {
             log.warn("Two-factor verification failed: userId={}", user.getId());
+            if (loginAttemptService.recordFailedAttempt(nationalId)) {
+                notifyAccountLocked(user.getCustomer());
+            }
             auditLogService.log("User", user.getId(), "LOGIN_2FA_FAILED", user.getEmail(), "Invalid two-factor code");
             throw new InvalidCredentialsException("Invalid two-factor code");
         }
+
+        loginAttemptService.recordSuccessfulLogin(nationalId);
 
         Customer customer = user.getCustomer();
         String token = jwtService.generateToken(user.getEmail(), user.getId(), customer.getId(), user.getRole().name());
@@ -139,15 +147,18 @@ public class AuthService {
 
         log.info("Two-factor login successful: userId={}", user.getId());
 
-        return new AuthResponse(user.getId(), customer.getId(), user.getEmail(), "Login successful", token, user.getRole(), refreshToken, false, null);
+        return AuthResponse.authenticated(user.getId(), customer.getId(), user.getEmail(), "Login successful", token, user.getRole(), refreshToken);
     }
 
     public TwoFactorSetupResponse setupTwoFactor() {
         User user = currentUser();
 
+        if (user.isTwoFactorEnabled()) {
+            throw new InvalidRequestException("Two-factor authentication is already enabled. Disable it first to re-provision.");
+        }
+
         String secret = totpService.generateSecret();
         user.setTwoFactorSecret(secret);
-        user.setTwoFactorEnabled(false);
         userRepository.save(user);
 
         auditLogService.log("User", user.getId(), "2FA_SETUP_STARTED", user.getEmail(), "Two-factor secret generated, awaiting confirmation");
@@ -207,7 +218,7 @@ public class AuthService {
 
         log.info("Token refreshed: userId={}", user.getId());
 
-        return new AuthResponse(user.getId(), user.getCustomer().getId(), user.getEmail(), "Token refreshed", newAccessToken, user.getRole(), newRefreshToken, false, null);
+        return AuthResponse.authenticated(user.getId(), user.getCustomer().getId(), user.getEmail(), "Token refreshed", newAccessToken, user.getRole(), newRefreshToken);
     }
 
     private void notifyAccountLocked(Customer customer) {

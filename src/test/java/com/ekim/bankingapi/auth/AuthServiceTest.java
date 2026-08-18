@@ -5,6 +5,7 @@ import com.ekim.bankingapi.customer.Customer;
 import com.ekim.bankingapi.customer.CustomerService;
 import com.ekim.bankingapi.exception.DuplicateResourceException;
 import com.ekim.bankingapi.exception.InvalidCredentialsException;
+import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import com.ekim.bankingapi.notification.NotificationService;
 import com.ekim.bankingapi.notification.NotificationType;
@@ -231,6 +232,7 @@ class AuthServiceTest {
         assertThat(response.isTwoFactorRequired()).isFalse();
         assertThat(response.getToken()).isEqualTo("fake-jwt-token");
         assertThat(response.getRefreshToken()).isEqualTo("fake-refresh-token");
+        verify(loginAttemptService).recordSuccessfulLogin("12345678901");
     }
 
     @Test
@@ -253,6 +255,33 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.verifyTwoFactor(request))
                 .isInstanceOf(InvalidCredentialsException.class);
+
+        verify(loginAttemptService).recordFailedAttempt("12345678901");
+    }
+
+    @Test
+    void verifyTwoFactor_shouldLockAccount_afterRepeatedFailedCodes() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        user.setTwoFactorEnabled(true);
+        user.setTwoFactorSecret("SECRET");
+
+        TwoFactorVerifyRequest request = new TwoFactorVerifyRequest();
+        request.setPendingToken("pending-token");
+        request.setCode("000000");
+
+        when(jwtService.isTwoFactorPendingToken("pending-token")).thenReturn(true);
+        when(jwtService.extractEmail("pending-token")).thenReturn("ahmet@example.com");
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+        when(totpService.verifyCode("SECRET", "000000")).thenReturn(false);
+        when(loginAttemptService.recordFailedAttempt("12345678901")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.verifyTwoFactor(request))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        verify(notificationService).notify(eq(1L), eq(NotificationType.ACCOUNT_LOCKED), anyString(), anyString());
     }
 
     @Test
@@ -285,6 +314,25 @@ class AuthServiceTest {
         assertThat(user.getTwoFactorSecret()).isEqualTo("NEWSECRET");
         assertThat(user.isTwoFactorEnabled()).isFalse();
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void setupTwoFactor_shouldThrow_whenAlreadyEnabled() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        user.setTwoFactorEnabled(true);
+        user.setTwoFactorSecret("EXISTING-SECRET");
+        authenticateAs("ahmet@example.com");
+
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> authService.setupTwoFactor())
+                .isInstanceOf(InvalidRequestException.class);
+
+        assertThat(user.getTwoFactorSecret()).isEqualTo("EXISTING-SECRET");
+        verify(userRepository, never()).save(any());
     }
 
     @Test

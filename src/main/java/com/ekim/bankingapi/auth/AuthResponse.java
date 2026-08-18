@@ -20,4 +20,9 @@ public class AuthResponse {
     public static AuthResponse twoFactorRequired(String pendingToken) {
         return new AuthResponse(null, null, null, "Two-factor authentication code required", null, null, null, true, pendingToken);
     }
+
+    public static AuthResponse authenticated(Long userId, Long customerId, String email, String message,
+                                              String token, Role role, String refreshToken) {
+        return new AuthResponse(userId, customerId, email, message, token, role, refreshToken, false, null);
+    }
 }

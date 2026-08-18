@@ -58,6 +58,19 @@ class StompAuthChannelInterceptorTest {
     }
 
     @Test
+    void preSend_shouldThrow_whenConnectHasTwoFactorPendingToken() {
+        interceptor = new StompAuthChannelInterceptor(jwtService);
+
+        when(jwtService.isTokenValid("pending-token")).thenReturn(true);
+        when(jwtService.isTwoFactorPendingToken("pending-token")).thenReturn(true);
+
+        Message<?> message = connectMessage("Bearer pending-token");
+
+        assertThatThrownBy(() -> interceptor.preSend(message, channel))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
     void preSend_shouldThrow_whenConnectHasNoAuthorizationHeader() {
         interceptor = new StompAuthChannelInterceptor(jwtService);
 

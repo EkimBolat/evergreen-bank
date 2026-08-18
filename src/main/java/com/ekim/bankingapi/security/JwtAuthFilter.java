@@ -37,7 +37,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
-        if (jwtService.isTokenValid(token)) {
+        if (jwtService.isTokenValid(token) && !jwtService.isTwoFactorPendingToken(token)) {
             String email = jwtService.extractEmail(token);
             String role = jwtService.extractRole(token);
             Long customerId = jwtService.extractCustomerId(token);

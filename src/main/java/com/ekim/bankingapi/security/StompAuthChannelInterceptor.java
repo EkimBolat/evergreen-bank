@@ -30,15 +30,17 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                     ? authHeader.substring(7)
                     : null;
 
-            if (token == null || !jwtService.isTokenValid(token)) {
+            if (token == null || !jwtService.isTokenValid(token) || jwtService.isTwoFactorPendingToken(token)) {
                 throw new BadCredentialsException("Invalid or missing WebSocket authentication token");
             }
 
             String email = jwtService.extractEmail(token);
             String role = jwtService.extractRole(token);
+            Long customerId = jwtService.extractCustomerId(token);
 
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     email, null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+            authToken.setDetails(customerId);
             accessor.setUser(authToken);
         }
 

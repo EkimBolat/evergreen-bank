@@ -1,12 +1,6 @@
 package com.ekim.bankingapi.account;
 
-import com.ekim.bankingapi.audit.AuditLogService;
 import com.ekim.bankingapi.customer.Customer;
-import com.ekim.bankingapi.notification.NotificationService;
-import com.ekim.bankingapi.notification.NotificationType;
-import com.ekim.bankingapi.transaction.Transaction;
-import com.ekim.bankingapi.transaction.TransactionRepository;
-import com.ekim.bankingapi.transaction.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +11,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,13 +20,7 @@ class InterestAccrualServiceTest {
     private AccountRepository accountRepository;
 
     @Mock
-    private TransactionRepository transactionRepository;
-
-    @Mock
-    private AuditLogService auditLogService;
-
-    @Mock
-    private NotificationService notificationService;
+    private InterestPostingService interestPostingService;
 
     @InjectMocks
     private InterestAccrualService interestAccrualService;
@@ -55,44 +42,7 @@ class InterestAccrualServiceTest {
     }
 
     @Test
-    void applyInterest_shouldCreditMonthlyInterest_whenRateIsPositive() {
-        interestAccrualService.applyInterest(savingsAccount);
-
-        // 12% annual on 1200 balance -> 1% monthly -> 12.00 interest
-        assertThat(savingsAccount.getBalance()).isEqualByComparingTo(BigDecimal.valueOf(1212));
-
-        verify(accountRepository).save(savingsAccount);
-        verify(transactionRepository).save(argThat((Transaction t) ->
-                t.getType() == TransactionType.INTEREST
-                        && t.getAmount().compareTo(BigDecimal.valueOf(12)) == 0
-                        && t.getBalanceAfter().compareTo(BigDecimal.valueOf(1212)) == 0
-        ));
-        verify(notificationService).notify(eq(1L), eq(NotificationType.INTEREST_CREDITED), anyString(), anyString());
-    }
-
-    @Test
-    void applyInterest_shouldDoNothing_whenInterestRateIsNull() {
-        savingsAccount.setInterestRate(null);
-
-        interestAccrualService.applyInterest(savingsAccount);
-
-        verify(accountRepository, never()).save(any());
-        verify(transactionRepository, never()).save(any());
-        verify(notificationService, never()).notify(anyLong(), any(), anyString(), anyString());
-    }
-
-    @Test
-    void applyInterest_shouldDoNothing_whenInterestRateIsZero() {
-        savingsAccount.setInterestRate(BigDecimal.ZERO);
-
-        interestAccrualService.applyInterest(savingsAccount);
-
-        verify(accountRepository, never()).save(any());
-        verify(transactionRepository, never()).save(any());
-    }
-
-    @Test
-    void applyMonthlyInterest_shouldProcessAllSavingsAccounts() {
+    void applyMonthlyInterest_shouldDelegateToPostingService_forEachSavingsAccount() {
         Account another = new Account();
         another.setId(2L);
         another.setAccountNumber("TR2222222222");
@@ -108,8 +58,8 @@ class InterestAccrualServiceTest {
 
         interestAccrualService.applyMonthlyInterest();
 
-        verify(accountRepository, times(2)).save(any(Account.class));
-        verify(transactionRepository, times(2)).save(any(Transaction.class));
+        verify(interestPostingService).applyInterest(savingsAccount);
+        verify(interestPostingService).applyInterest(another);
     }
 
     @Test
@@ -118,15 +68,14 @@ class InterestAccrualServiceTest {
         failing.setId(3L);
         failing.setAccountNumber("TR3333333333");
         failing.setAccountType(AccountType.SAVINGS);
-        failing.setBalance(BigDecimal.valueOf(500));
-        failing.setInterestRate(BigDecimal.valueOf(6));
-        failing.setCustomer(null); // will cause NPE when resolving customer id
 
         when(accountRepository.findByAccountType(AccountType.SAVINGS))
                 .thenReturn(List.of(failing, savingsAccount));
+        doThrow(new RuntimeException("boom")).when(interestPostingService).applyInterest(failing);
 
         interestAccrualService.applyMonthlyInterest();
 
-        verify(accountRepository, times(1)).save(savingsAccount);
+        verify(interestPostingService).applyInterest(failing);
+        verify(interestPostingService).applyInterest(savingsAccount);
     }
 }
