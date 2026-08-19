@@ -45,6 +45,14 @@ export interface AccountResponse {
   createdAt: string
 }
 
+export interface TransferResponse {
+  id: number
+  fromAccountNumber: string
+  toAccountNumber: string
+  amount: number
+  timestamp: string
+}
+
 export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'INTEREST'
 
 export interface TransactionResponse {

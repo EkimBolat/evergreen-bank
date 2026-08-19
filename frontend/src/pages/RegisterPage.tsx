@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Button, ErrorBanner, Input, Label } from '../components/ui'
-import { authApi, ApiError } from '../lib/api'
+import { authApi } from '../lib/api'
+import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
 
 export function RegisterPage() {
@@ -37,7 +38,7 @@ export function RegisterPage() {
       })
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Kayıt oluşturulamadı.')
+      setError(friendlyErrorMessage(err, 'Kayıt oluşturulamadı.'))
     } finally {
       setLoading(false)
     }

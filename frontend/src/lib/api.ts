@@ -6,6 +6,7 @@ import type {
   Page,
   RegisterRequest,
   TransactionResponse,
+  TransferResponse,
   TwoFactorVerifyRequest,
 } from './types'
 
@@ -63,6 +64,8 @@ export const authApi = {
 
 export const accountApi = {
   getMyAccount: (token: string) => request<AccountResponse>('/accounts/me', { token }),
+  getByAccountNumber: (token: string, accountNumber: string) =>
+    request<AccountResponse>(`/accounts/number/${encodeURIComponent(accountNumber)}`, { token }),
 }
 
 export const transactionApi = {
@@ -71,6 +74,11 @@ export const transactionApi = {
       `/transactions/account/${accountId}?page=${page}&size=${size}&sort=timestamp,desc`,
       { token },
     ),
+}
+
+export const transferApi = {
+  send: (token: string, payload: { fromAccountId: number; toAccountId: number; amount: number }) =>
+    request<TransferResponse>('/transfers', { method: 'POST', body: payload, token }),
 }
 
 export const notificationApi = {

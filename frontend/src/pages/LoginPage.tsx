@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Button, ErrorBanner, Input, Label } from '../components/ui'
-import { authApi, ApiError } from '../lib/api'
+import { authApi } from '../lib/api'
+import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
 
 export function LoginPage() {
@@ -36,7 +37,7 @@ export function LoginPage() {
       })
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Giriş yapılamadı. Lütfen tekrar deneyin.')
+      setError(friendlyErrorMessage(err, 'Giriş yapılamadı. Lütfen tekrar deneyin.'))
     } finally {
       setLoading(false)
     }

@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Button, ErrorBanner, Input, Label } from '../components/ui'
-import { authApi, ApiError } from '../lib/api'
+import { authApi } from '../lib/api'
+import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
 
 interface LocationState {
@@ -39,7 +40,7 @@ export function TwoFactorPage() {
       })
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Doğrulama başarısız oldu.')
+      setError(friendlyErrorMessage(err, 'Doğrulama başarısız oldu.'))
     } finally {
       setLoading(false)
     }

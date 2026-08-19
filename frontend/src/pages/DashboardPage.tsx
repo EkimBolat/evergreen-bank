@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Layout } from '../components/Layout'
+import { TransferForm } from '../components/TransferForm'
 import { Card } from '../components/ui'
 import { accountApi, transactionApi, ApiError } from '../lib/api'
+import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
 import { accountTypeLabel, formatAccountNumber, formatCurrency, formatDate } from '../lib/format'
 import type { AccountResponse, TransactionResponse } from '../lib/types'
@@ -13,14 +15,16 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     if (!token) return
 
     let cancelled = false
+    const isInitialLoad = refreshKey === 0
 
     async function load() {
-      setLoading(true)
+      if (isInitialLoad) setLoading(true)
       setError(null)
       setNotFound(false)
       try {
@@ -36,10 +40,10 @@ export function DashboardPage() {
         if (err instanceof ApiError && err.status === 404) {
           setNotFound(true)
         } else {
-          setError(err instanceof ApiError ? err.message : 'Veriler yüklenemedi.')
+          setError(friendlyErrorMessage(err, 'Veriler yüklenemedi.'))
         }
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled && isInitialLoad) setLoading(false)
       }
     }
 
@@ -47,7 +51,7 @@ export function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [token])
+  }, [token, refreshKey])
 
   return (
     <Layout>
@@ -89,14 +93,23 @@ export function DashboardPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Card className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Günlük Çekim Limiti</p>
-              <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.dailyLimit)}</p>
+            <Card>
+              <div className="border-b border-ink-100 px-5 py-4">
+                <h2 className="text-sm font-semibold text-ink-900">Para Transferi</h2>
+              </div>
+              <TransferForm account={account} onSuccess={() => setRefreshKey((k) => k + 1)} />
             </Card>
-            <Card className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Aylık Çekim Limiti</p>
-              <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.monthlyLimit)}</p>
-            </Card>
+
+            <div className="space-y-4">
+              <Card className="p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Günlük Çekim Limiti</p>
+                <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.dailyLimit)}</p>
+              </Card>
+              <Card className="p-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Aylık Çekim Limiti</p>
+                <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.monthlyLimit)}</p>
+              </Card>
+            </div>
           </div>
 
           <Card>
