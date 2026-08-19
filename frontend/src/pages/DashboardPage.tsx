@@ -17,6 +17,7 @@ export function DashboardPage() {
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     if (!token) return
@@ -53,6 +54,26 @@ export function DashboardPage() {
       cancelled = true
     }
   }, [token, refreshKey])
+
+  async function handleExport() {
+    if (!token || !account) return
+    setExporting(true)
+    try {
+      const blob = await transactionApi.exportCsv(token, account.id)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `ekstre-${account.accountNumber}.csv`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      setError('Ekstre indirilemedi.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <Layout>
@@ -121,8 +142,16 @@ export function DashboardPage() {
           </div>
 
           <Card>
-            <div className="border-b border-ink-100 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
               <h2 className="text-sm font-semibold text-ink-900">Son İşlemler</h2>
+              <button
+                type="button"
+                onClick={handleExport}
+                disabled={exporting}
+                className="text-xs font-medium text-brand-600 hover:text-brand-700 disabled:opacity-50"
+              >
+                {exporting ? 'İndiriliyor...' : 'Ekstre İndir (CSV)'}
+              </button>
             </div>
 
             {transactions.length === 0 ? (

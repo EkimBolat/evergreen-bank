@@ -88,6 +88,15 @@ export const transactionApi = {
       body: { amount },
       token,
     }),
+  exportCsv: async (token: string, accountId: number): Promise<Blob> => {
+    const response = await fetch(`${API_BASE}/transactions/account/${accountId}/export`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) {
+      throw new ApiError(response.status, `Ekstre indirilemedi (${response.status})`)
+    }
+    return response.blob()
+  },
 }
 
 export const transferApi = {
