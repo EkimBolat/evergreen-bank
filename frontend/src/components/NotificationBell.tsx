@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { notificationApi } from '../lib/api'
 import { useAuth } from '../lib/use-auth'
+import { connectNotificationSocket } from '../lib/ws'
 import type { NotificationResponse } from '../lib/types'
-
-const POLL_INTERVAL_MS = 20000
 
 export function NotificationBell() {
   const { token } = useAuth()
@@ -17,20 +16,23 @@ export function NotificationBell() {
     if (!token) return
     let cancelled = false
 
-    async function poll() {
-      try {
-        const count = await notificationApi.unreadCount(token!)
+    notificationApi
+      .unreadCount(token)
+      .then((count) => {
         if (!cancelled) setUnreadCount(count)
-      } catch {
-        // transient polling errors are not worth surfacing to the user
-      }
-    }
+      })
+      .catch(() => {
+        // an initial-load miss just means the badge is briefly stale
+      })
 
-    poll()
-    const interval = setInterval(poll, POLL_INTERVAL_MS)
+    const client = connectNotificationSocket(token, (notification) => {
+      setUnreadCount((prev) => prev + 1)
+      setNotifications((prev) => [notification, ...prev].slice(0, 8))
+    })
+
     return () => {
       cancelled = true
-      clearInterval(interval)
+      client.deactivate()
     }
   }, [token])
 
