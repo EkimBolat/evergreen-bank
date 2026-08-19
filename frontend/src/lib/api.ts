@@ -3,6 +3,9 @@ import type {
   AuthResponse,
   CardIssuedResponse,
   CardResponse,
+  CardType,
+  CreditCardStatementResponse,
+  CreditCardTransactionResponse,
   LoginRequest,
   NotificationResponse,
   Page,
@@ -107,12 +110,37 @@ export const transferApi = {
 export const cardApi = {
   list: (token: string, accountId: number) =>
     request<CardResponse[]>(`/accounts/${accountId}/cards`, { token }),
-  issue: (token: string, accountId: number) =>
-    request<CardIssuedResponse>(`/accounts/${accountId}/cards`, { method: 'POST', token }),
+  issue: (token: string, accountId: number, cardType: CardType, creditLimit?: number) =>
+    request<CardIssuedResponse>(`/accounts/${accountId}/cards`, {
+      method: 'POST',
+      body: { cardType, creditLimit },
+      token,
+    }),
   block: (token: string, cardId: number) =>
     request<CardResponse>(`/cards/${cardId}/block`, { method: 'PATCH', token }),
   activate: (token: string, cardId: number) =>
     request<CardResponse>(`/cards/${cardId}/activate`, { method: 'PATCH', token }),
+  cancel: (token: string, cardId: number) =>
+    request<CardResponse>(`/cards/${cardId}`, { method: 'DELETE', token }),
+}
+
+export const creditCardApi = {
+  charge: (token: string, cardId: number, amount: number, description?: string) =>
+    request<CreditCardTransactionResponse>(`/cards/${cardId}/charge`, {
+      method: 'POST',
+      body: { amount, description },
+      token,
+    }),
+  pay: (token: string, cardId: number, amount: number) =>
+    request<CreditCardTransactionResponse>(`/cards/${cardId}/pay`, {
+      method: 'POST',
+      body: { amount },
+      token,
+    }),
+  getStatements: (token: string, cardId: number) =>
+    request<CreditCardStatementResponse[]>(`/cards/${cardId}/statements`, { token }),
+  getTransactions: (token: string, cardId: number) =>
+    request<CreditCardTransactionResponse[]>(`/cards/${cardId}/transactions`, { token }),
 }
 
 export const notificationApi = {

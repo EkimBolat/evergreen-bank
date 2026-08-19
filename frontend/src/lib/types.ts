@@ -65,7 +65,8 @@ export interface TransactionResponse {
   timestamp: string
 }
 
-export type CardStatus = 'ACTIVE' | 'BLOCKED'
+export type CardStatus = 'ACTIVE' | 'BLOCKED' | 'CANCELLED'
+export type CardType = 'DEBIT' | 'CREDIT'
 
 export interface CardResponse {
   id: number
@@ -74,6 +75,10 @@ export interface CardResponse {
   cardHolderName: string
   expiryDate: string
   status: CardStatus
+  cardType: CardType
+  creditLimit: number | null
+  currentBalance: number | null
+  availableCredit: number | null
   createdAt: string
 }
 
@@ -85,6 +90,30 @@ export interface CardIssuedResponse {
   cardHolderName: string
   expiryDate: string
   status: CardStatus
+  cardType: CardType
+  creditLimit: number | null
+}
+
+export type CreditCardTransactionType = 'PURCHASE' | 'PAYMENT' | 'INTEREST_CHARGE'
+
+export interface CreditCardTransactionResponse {
+  id: number
+  type: CreditCardTransactionType
+  amount: number
+  description: string | null
+  balanceAfter: number
+  timestamp: string
+}
+
+export interface CreditCardStatementResponse {
+  id: number
+  statementDate: string
+  dueDate: string
+  statementBalance: number
+  minimumPayment: number
+  paidAmount: number
+  interestCharged: number
+  paidInFull: boolean
 }
 
 export type NotificationType =
@@ -99,6 +128,11 @@ export type NotificationType =
   | 'SCHEDULED_TRANSFER_FAILED'
   | 'CARD_ISSUED'
   | 'CARD_BLOCKED'
+  | 'CARD_CANCELLED'
+  | 'CREDIT_CARD_CHARGED'
+  | 'CREDIT_CARD_PAYMENT_RECEIVED'
+  | 'CREDIT_STATEMENT_GENERATED'
+  | 'CREDIT_CARD_INTEREST_CHARGED'
   | 'TWO_FACTOR_ENABLED'
   | 'TWO_FACTOR_DISABLED'
 
