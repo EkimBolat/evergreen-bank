@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,7 +57,7 @@ class CardServiceTest {
     }
 
     @Test
-    void issueCard_shouldCreateCard_whenAccountExists() {
+    void issueCard_shouldCreateDebitCard_byDefault() {
         when(accountService.findAccountEntityById(1L)).thenReturn(account);
         when(cardRepository.existsByCardNumber(anyString())).thenReturn(false);
         when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> {
@@ -65,14 +66,57 @@ class CardServiceTest {
             return c;
         });
 
-        CardIssuedResponse response = cardService.issueCard(1L);
+        CardIssuedResponse response = cardService.issueCard(1L, new CardIssueRequest());
 
         assertThat(response.getCardNumber()).hasSize(16);
         assertThat(response.getCvv()).hasSize(3);
         assertThat(response.getCardHolderName()).isEqualTo("AHMET YILMAZ");
         assertThat(response.getStatus()).isEqualTo(CardStatus.ACTIVE);
+        assertThat(response.getCardType()).isEqualTo(CardType.DEBIT);
+        assertThat(response.getCreditLimit()).isNull();
 
         verify(notificationService).notify(eq(1L), eq(NotificationType.CARD_ISSUED), anyString(), anyString());
+    }
+
+    @Test
+    void issueCard_shouldCreateCreditCard_withLimitAndApr() {
+        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(cardRepository.existsByCardNumber(anyString())).thenReturn(false);
+        when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> {
+            Card c = invocation.getArgument(0);
+            c.setId(11L);
+            return c;
+        });
+
+        CardIssueRequest request = new CardIssueRequest();
+        request.setCardType(CardType.CREDIT);
+        request.setCreditLimit(BigDecimal.valueOf(10000));
+
+        CardIssuedResponse response = cardService.issueCard(1L, request);
+
+        assertThat(response.getCardType()).isEqualTo(CardType.CREDIT);
+        assertThat(response.getCreditLimit()).isEqualByComparingTo(BigDecimal.valueOf(10000));
+
+        verify(cardRepository).save(argThat(c ->
+                c.getCardType() == CardType.CREDIT
+                        && c.getCreditLimit().compareTo(BigDecimal.valueOf(10000)) == 0
+                        && c.getCurrentBalance().compareTo(BigDecimal.ZERO) == 0
+                        && c.getApr() != null
+                        && c.getNextStatementDate() != null
+        ));
+    }
+
+    @Test
+    void issueCard_shouldThrow_whenCreditCardHasNoLimit() {
+        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+
+        CardIssueRequest request = new CardIssueRequest();
+        request.setCardType(CardType.CREDIT);
+
+        assertThatThrownBy(() -> cardService.issueCard(1L, request))
+                .isInstanceOf(InvalidRequestException.class);
+
+        verify(cardRepository, never()).save(any());
     }
 
     @Test
@@ -83,6 +127,7 @@ class CardServiceTest {
         card.setCardNumber("1234567812345678");
         card.setCardHolderName("AHMET YILMAZ");
         card.setStatus(CardStatus.ACTIVE);
+        card.setCardType(CardType.DEBIT);
 
         when(accountService.findAccountEntityById(1L)).thenReturn(account);
         when(cardRepository.findByAccountId(1L)).thenReturn(List.of(card));
@@ -103,11 +148,7 @@ class CardServiceTest {
 
     @Test
     void blockCard_shouldSetStatusBlocked_andNotifyCustomer() {
-        Card card = new Card();
-        card.setId(1L);
-        card.setAccount(account);
-        card.setCardNumber("1234567812345678");
-        card.setStatus(CardStatus.ACTIVE);
+        Card card = activeDebitCard();
 
         when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
         when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -120,10 +161,7 @@ class CardServiceTest {
 
     @Test
     void blockCard_shouldThrow_whenAlreadyBlocked() {
-        Card card = new Card();
-        card.setId(1L);
-        card.setAccount(account);
-        card.setCardNumber("1234567812345678");
+        Card card = activeDebitCard();
         card.setStatus(CardStatus.BLOCKED);
 
         when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
@@ -135,11 +173,19 @@ class CardServiceTest {
     }
 
     @Test
+    void blockCard_shouldThrow_whenCardIsCancelled() {
+        Card card = activeDebitCard();
+        card.setStatus(CardStatus.CANCELLED);
+
+        when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
+
+        assertThatThrownBy(() -> cardService.blockCard(1L))
+                .isInstanceOf(InvalidRequestException.class);
+    }
+
+    @Test
     void activateCard_shouldSetStatusActive_whenCurrentlyBlocked() {
-        Card card = new Card();
-        card.setId(1L);
-        card.setAccount(account);
-        card.setCardNumber("1234567812345678");
+        Card card = activeDebitCard();
         card.setStatus(CardStatus.BLOCKED);
 
         when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
@@ -152,11 +198,7 @@ class CardServiceTest {
 
     @Test
     void activateCard_shouldThrow_whenAlreadyActive() {
-        Card card = new Card();
-        card.setId(1L);
-        card.setAccount(account);
-        card.setCardNumber("1234567812345678");
-        card.setStatus(CardStatus.ACTIVE);
+        Card card = activeDebitCard();
 
         when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
 
@@ -164,5 +206,55 @@ class CardServiceTest {
                 .isInstanceOf(InvalidRequestException.class);
 
         verify(cardRepository, never()).save(any());
+    }
+
+    @Test
+    void activateCard_shouldThrow_whenCardIsCancelled() {
+        Card card = activeDebitCard();
+        card.setStatus(CardStatus.CANCELLED);
+
+        when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
+
+        assertThatThrownBy(() -> cardService.activateCard(1L))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("Cancelled");
+
+        verify(cardRepository, never()).save(any());
+    }
+
+    @Test
+    void cancelCard_shouldSetStatusCancelled_andNotifyCustomer() {
+        Card card = activeDebitCard();
+
+        when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
+        when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CardResponse response = cardService.cancelCard(1L);
+
+        assertThat(response.getStatus()).isEqualTo(CardStatus.CANCELLED);
+        verify(notificationService).notify(eq(1L), eq(NotificationType.CARD_CANCELLED), anyString(), anyString());
+    }
+
+    @Test
+    void cancelCard_shouldThrow_whenAlreadyCancelled() {
+        Card card = activeDebitCard();
+        card.setStatus(CardStatus.CANCELLED);
+
+        when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
+
+        assertThatThrownBy(() -> cardService.cancelCard(1L))
+                .isInstanceOf(InvalidRequestException.class);
+
+        verify(cardRepository, never()).save(any());
+    }
+
+    private Card activeDebitCard() {
+        Card card = new Card();
+        card.setId(1L);
+        card.setAccount(account);
+        card.setCardNumber("1234567812345678");
+        card.setStatus(CardStatus.ACTIVE);
+        card.setCardType(CardType.DEBIT);
+        return card;
     }
 }

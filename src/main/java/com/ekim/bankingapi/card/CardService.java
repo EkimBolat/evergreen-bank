@@ -10,6 +10,7 @@ import com.ekim.bankingapi.notification.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,14 +22,20 @@ public class CardService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int CARD_VALIDITY_YEARS = 5;
+    static final BigDecimal DEFAULT_CREDIT_APR = BigDecimal.valueOf(42.00);
 
     private final CardRepository cardRepository;
     private final AccountService accountService;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
 
-    public CardIssuedResponse issueCard(Long accountId) {
+    public CardIssuedResponse issueCard(Long accountId, CardIssueRequest request) {
         Account account = accountService.findAccountEntityById(accountId);
+
+        CardType cardType = request.getCardType() == null ? CardType.DEBIT : request.getCardType();
+        if (cardType == CardType.CREDIT && request.getCreditLimit() == null) {
+            throw new InvalidRequestException("Credit limit is required for credit cards");
+        }
 
         String cardNumber = generateUniqueCardNumber();
         String cvv = generateCvv();
@@ -39,14 +46,23 @@ public class CardService {
         card.setCardHolderName((account.getCustomer().getFirstName() + " " + account.getCustomer().getLastName()).toUpperCase(Locale.ROOT));
         card.setExpiryDate(LocalDate.now().plusYears(CARD_VALIDITY_YEARS));
         card.setStatus(CardStatus.ACTIVE);
+        card.setCardType(cardType);
+
+        if (cardType == CardType.CREDIT) {
+            card.setCreditLimit(request.getCreditLimit());
+            card.setCurrentBalance(BigDecimal.ZERO);
+            card.setApr(DEFAULT_CREDIT_APR);
+            card.setNextStatementDate(LocalDate.now().plusMonths(1));
+        }
 
         Card saved = cardRepository.save(card);
 
-        auditLogService.log("Card", saved.getId(), "ISSUE", "Card issued for account: " + account.getAccountNumber());
+        auditLogService.log("Card", saved.getId(), "ISSUE",
+                "Card issued for account: " + account.getAccountNumber() + ", type: " + cardType);
 
         notificationService.notify(account.getCustomer().getId(), NotificationType.CARD_ISSUED,
-                "New Card Issued", "A new card ending in " + cardNumber.substring(cardNumber.length() - 4) +
-                        " was issued for account " + account.getAccountNumber());
+                "New Card Issued", "A new " + cardType.name().toLowerCase(Locale.ROOT) + " card ending in " +
+                        cardNumber.substring(cardNumber.length() - 4) + " was issued for account " + account.getAccountNumber());
 
         return CardIssuedResponse.of(saved, cardNumber, cvv);
     }
@@ -65,6 +81,9 @@ public class CardService {
     public CardResponse blockCard(Long id) {
         Card card = findCardEntityById(id);
 
+        if (card.getStatus() == CardStatus.CANCELLED) {
+            throw new InvalidRequestException("Cancelled cards cannot be blocked");
+        }
         if (card.getStatus() == CardStatus.BLOCKED) {
             throw new InvalidRequestException("Card is already blocked");
         }
@@ -83,6 +102,9 @@ public class CardService {
     public CardResponse activateCard(Long id) {
         Card card = findCardEntityById(id);
 
+        if (card.getStatus() == CardStatus.CANCELLED) {
+            throw new InvalidRequestException("Cancelled cards cannot be reactivated");
+        }
         if (card.getStatus() == CardStatus.ACTIVE) {
             throw new InvalidRequestException("Card is already active");
         }
@@ -95,7 +117,25 @@ public class CardService {
         return CardResponse.fromEntity(saved);
     }
 
-    private Card findCardEntityById(Long id) {
+    public CardResponse cancelCard(Long id) {
+        Card card = findCardEntityById(id);
+
+        if (card.getStatus() == CardStatus.CANCELLED) {
+            throw new InvalidRequestException("Card is already cancelled");
+        }
+
+        card.setStatus(CardStatus.CANCELLED);
+        Card saved = cardRepository.save(card);
+
+        auditLogService.log("Card", saved.getId(), "CANCEL", "Card permanently cancelled: " + maskedNumber(saved));
+
+        notificationService.notify(saved.getAccount().getCustomer().getId(), NotificationType.CARD_CANCELLED,
+                "Card Cancelled", "Your card ending in " + lastFour(saved) + " has been permanently cancelled");
+
+        return CardResponse.fromEntity(saved);
+    }
+
+    Card findCardEntityById(Long id) {
         return cardRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found with id: " + id));
     }

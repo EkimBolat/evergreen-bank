@@ -1,6 +1,5 @@
 package com.ekim.bankingapi.card;
 
-import com.ekim.bankingapi.account.Account;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,46 +11,38 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "cards")
+@Table(name = "credit_card_statements")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Card {
+public class CreditCardStatement {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
-
-    @Column(nullable = false, unique = true, updatable = false)
-    private String cardNumber;
+    @JoinColumn(name = "card_id", nullable = false)
+    private Card card;
 
     @Column(nullable = false, updatable = false)
-    private String cardHolderName;
+    private LocalDate statementDate;
 
     @Column(nullable = false, updatable = false)
-    private LocalDate expiryDate;
+    private LocalDate dueDate;
 
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, updatable = false)
+    private BigDecimal statementBalance;
+
+    @Column(nullable = false, updatable = false)
+    private BigDecimal minimumPayment;
+
     @Column(nullable = false)
-    private CardStatus status = CardStatus.ACTIVE;
+    private BigDecimal paidAmount = BigDecimal.ZERO;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, updatable = false)
-    private CardType cardType = CardType.DEBIT;
-
-    /** Credit-only fields below; left null for DEBIT cards. */
-    private BigDecimal creditLimit;
-
-    private BigDecimal currentBalance;
-
-    private BigDecimal apr;
-
-    private LocalDate nextStatementDate;
+    @Column(nullable = false)
+    private BigDecimal interestCharged = BigDecimal.ZERO;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
