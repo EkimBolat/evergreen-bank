@@ -74,6 +74,18 @@ export const transactionApi = {
       `/transactions/account/${accountId}?page=${page}&size=${size}&sort=timestamp,desc`,
       { token },
     ),
+  deposit: (token: string, accountId: number, amount: number) =>
+    request<TransactionResponse>(`/transactions/deposit/${accountId}`, {
+      method: 'POST',
+      body: { amount },
+      token,
+    }),
+  withdraw: (token: string, accountId: number, amount: number) =>
+    request<TransactionResponse>(`/transactions/withdraw/${accountId}`, {
+      method: 'POST',
+      body: { amount },
+      token,
+    }),
 }
 
 export const transferApi = {

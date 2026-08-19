@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DepositWithdrawForm } from '../components/DepositWithdrawForm'
 import { Layout } from '../components/Layout'
 import { TransferForm } from '../components/TransferForm'
 import { Card } from '../components/ui'
@@ -100,16 +101,23 @@ export function DashboardPage() {
               <TransferForm account={account} onSuccess={() => setRefreshKey((k) => k + 1)} />
             </Card>
 
-            <div className="space-y-4">
-              <Card className="p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Günlük Çekim Limiti</p>
-                <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.dailyLimit)}</p>
-              </Card>
-              <Card className="p-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Aylık Çekim Limiti</p>
-                <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.monthlyLimit)}</p>
-              </Card>
-            </div>
+            <Card>
+              <div className="border-b border-ink-100 px-5 py-4">
+                <h2 className="text-sm font-semibold text-ink-900">Para Yatır / Çek</h2>
+              </div>
+              <DepositWithdrawForm account={account} onSuccess={() => setRefreshKey((k) => k + 1)} />
+            </Card>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card className="p-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Günlük Çekim Limiti</p>
+              <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.dailyLimit)}</p>
+            </Card>
+            <Card className="p-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Aylık Çekim Limiti</p>
+              <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.monthlyLimit)}</p>
+            </Card>
           </div>
 
           <Card>
