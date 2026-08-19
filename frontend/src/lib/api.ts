@@ -1,6 +1,8 @@
 import type {
   AccountResponse,
   AuthResponse,
+  CardIssuedResponse,
+  CardResponse,
   LoginRequest,
   NotificationResponse,
   Page,
@@ -91,6 +93,17 @@ export const transactionApi = {
 export const transferApi = {
   send: (token: string, payload: { fromAccountId: number; toAccountId: number; amount: number }) =>
     request<TransferResponse>('/transfers', { method: 'POST', body: payload, token }),
+}
+
+export const cardApi = {
+  list: (token: string, accountId: number) =>
+    request<CardResponse[]>(`/accounts/${accountId}/cards`, { token }),
+  issue: (token: string, accountId: number) =>
+    request<CardIssuedResponse>(`/accounts/${accountId}/cards`, { method: 'POST', token }),
+  block: (token: string, cardId: number) =>
+    request<CardResponse>(`/cards/${cardId}/block`, { method: 'PATCH', token }),
+  activate: (token: string, cardId: number) =>
+    request<CardResponse>(`/cards/${cardId}/activate`, { method: 'PATCH', token }),
 }
 
 export const notificationApi = {

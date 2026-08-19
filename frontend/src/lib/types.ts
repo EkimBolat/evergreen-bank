@@ -65,6 +65,28 @@ export interface TransactionResponse {
   timestamp: string
 }
 
+export type CardStatus = 'ACTIVE' | 'BLOCKED'
+
+export interface CardResponse {
+  id: number
+  accountId: number
+  maskedCardNumber: string
+  cardHolderName: string
+  expiryDate: string
+  status: CardStatus
+  createdAt: string
+}
+
+export interface CardIssuedResponse {
+  id: number
+  accountId: number
+  cardNumber: string
+  cvv: string
+  cardHolderName: string
+  expiryDate: string
+  status: CardStatus
+}
+
 export type NotificationType =
   | 'TRANSFER_SENT'
   | 'TRANSFER_RECEIVED'

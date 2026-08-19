@@ -1,8 +1,13 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/use-auth'
 import { Logo } from './Logo'
 import { NotificationBell } from './NotificationBell'
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+    isActive ? 'bg-brand-50 text-brand-700' : 'text-ink-600 hover:bg-ink-100'
+  }`
 
 export function Layout({ children }: { children: ReactNode }) {
   const { email, logout } = useAuth()
@@ -17,7 +22,17 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-ink-50">
       <header className="border-b border-ink-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
-          <Logo size={36} withWordmark />
+          <div className="flex items-center gap-6">
+            <Logo size={36} withWordmark />
+            <nav className="flex items-center gap-1">
+              <NavLink to="/dashboard" className={navLinkClass}>
+                Panel
+              </NavLink>
+              <NavLink to="/cards" className={navLinkClass}>
+                Kartlarım
+              </NavLink>
+            </nav>
+          </div>
 
           <div className="flex items-center gap-3">
             <NotificationBell />
