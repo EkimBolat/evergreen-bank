@@ -6,15 +6,20 @@ import com.ekim.bankingapi.customer.CustomerService;
 import com.ekim.bankingapi.exception.DuplicateResourceException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
+import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import com.ekim.bankingapi.notification.NotificationService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,6 +52,11 @@ class AccountServiceTest {
         customer.setId(1L);
         customer.setFirstName("Ahmet");
         customer.setLastName("Yılmaz");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -142,5 +152,49 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.getAccountById(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("999");
+    }
+
+    @Test
+    void getMyAccount_shouldReturnAccount_forAuthenticatedCustomer() {
+        authenticateAs(1L);
+
+        Account account = new Account();
+        account.setId(5L);
+        account.setAccountNumber("TR1111111111");
+        account.setBalance(BigDecimal.valueOf(1000));
+        account.setCustomer(customer);
+
+        when(accountRepository.findByCustomerId(1L)).thenReturn(Optional.of(account));
+
+        AccountResponse response = accountService.getMyAccount();
+
+        assertThat(response.getId()).isEqualTo(5L);
+        assertThat(response.getAccountNumber()).isEqualTo("TR1111111111");
+    }
+
+    @Test
+    void getMyAccount_shouldThrow_whenNoAccountExistsForCustomer() {
+        authenticateAs(1L);
+
+        when(accountRepository.findByCustomerId(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> accountService.getMyAccount())
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void getMyAccount_shouldThrow_whenAuthenticationDetailsAreMissing() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("ahmet@example.com", null, List.of()));
+
+        assertThatThrownBy(() -> accountService.getMyAccount())
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    private void authenticateAs(Long customerId) {
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken("ahmet@example.com", null, List.of());
+        authToken.setDetails(customerId);
+        SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 }

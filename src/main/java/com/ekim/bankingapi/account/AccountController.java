@@ -21,6 +21,11 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<AccountResponse> getMyAccount() {
+        return ResponseEntity.ok(accountService.getMyAccount());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<AccountResponse> getAccountById(@PathVariable Long id) {
         return ResponseEntity.ok(accountService.getAccountById(id));

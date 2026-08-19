@@ -5,6 +5,7 @@ import com.ekim.bankingapi.branch.BranchService;
 import com.ekim.bankingapi.customer.Customer;
 import com.ekim.bankingapi.customer.CustomerService;
 import com.ekim.bankingapi.exception.DuplicateResourceException;
+import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import com.ekim.bankingapi.exception.TransactionLimitExceededException;
@@ -13,6 +14,7 @@ import com.ekim.bankingapi.notification.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -69,6 +71,20 @@ public class AccountService {
     public Page<AccountResponse> getAllAccounts(Pageable pageable) {
         return accountRepository.findAll(pageable)
                 .map(AccountResponse::fromEntity);
+    }
+
+    public AccountResponse getMyAccount() {
+        Account account = accountRepository.findByCustomerId(currentCustomerId())
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for the current customer"));
+        return AccountResponse.fromEntity(account);
+    }
+
+    private Long currentCustomerId() {
+        Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
+        if (!(details instanceof Long customerId)) {
+            throw new InvalidCredentialsException("Unable to resolve authenticated customer");
+        }
+        return customerId;
     }
 
     // Transaction ve Transfer service'leri, para çıkışından ÖNCE bu kontrolü çağırır
