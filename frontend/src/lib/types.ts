@@ -145,6 +145,65 @@ export interface NotificationResponse {
   createdAt: string
 }
 
+export interface CustomerRequest {
+  firstName: string
+  lastName: string
+  email: string
+  phoneNumber: string
+  nationalId: string
+  age: number
+  address?: string
+  branchId?: number
+}
+
+export interface CustomerResponse {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+  phoneNumber: string
+  nationalId: string
+  age: number
+  address: string | null
+  branchId: number | null
+  branchName: string | null
+  naturePoints: number
+  treesPlanted: number
+  createdAt: string
+}
+
+export interface BranchRequest {
+  name: string
+  code: string
+  city: string
+  address?: string
+}
+
+export interface BranchResponse {
+  id: number
+  name: string
+  code: string
+  city: string
+  address: string | null
+  createdAt: string
+}
+
+export interface AccountRequest {
+  accountType: AccountType
+  interestRate?: number
+  branchId?: number
+}
+
+export interface AuditLogResponse {
+  id: number
+  entityType: string
+  entityId: number | null
+  action: string
+  performedBy: string
+  details: string
+  timestamp: string
+}
+
 export interface Page<T> {
   content: T[]
   totalElements: number

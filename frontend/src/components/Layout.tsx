@@ -10,7 +10,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { email, logout } = useAuth()
+  const { email, role, logout } = useAuth()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -21,7 +21,7 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-ink-50">
       <header className="border-b border-ink-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <div className="flex items-center gap-6">
             <Logo size={36} withWordmark />
             <nav className="flex items-center gap-1">
@@ -31,6 +31,11 @@ export function Layout({ children }: { children: ReactNode }) {
               <NavLink to="/cards" className={navLinkClass}>
                 Kartlarım
               </NavLink>
+              {role === 'ADMIN' && (
+                <NavLink to="/admin" className={navLinkClass}>
+                  Admin
+                </NavLink>
+              )}
             </nav>
           </div>
 
@@ -51,7 +56,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
     </div>
   )
 }

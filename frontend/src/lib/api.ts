@@ -1,11 +1,17 @@
 import type {
+  AccountRequest,
   AccountResponse,
+  AuditLogResponse,
   AuthResponse,
+  BranchRequest,
+  BranchResponse,
   CardIssuedResponse,
   CardResponse,
   CardType,
   CreditCardStatementResponse,
   CreditCardTransactionResponse,
+  CustomerRequest,
+  CustomerResponse,
   LoginRequest,
   NotificationResponse,
   Page,
@@ -141,6 +147,30 @@ export const creditCardApi = {
     request<CreditCardStatementResponse[]>(`/cards/${cardId}/statements`, { token }),
   getTransactions: (token: string, cardId: number) =>
     request<CreditCardTransactionResponse[]>(`/cards/${cardId}/transactions`, { token }),
+}
+
+export const customerApi = {
+  list: (token: string, page = 0, size = 10) =>
+    request<Page<CustomerResponse>>(`/customers?page=${page}&size=${size}`, { token }),
+  create: (token: string, payload: CustomerRequest) =>
+    request<CustomerResponse>('/customers', { method: 'POST', body: payload, token }),
+}
+
+export const branchApi = {
+  list: (token: string, page = 0, size = 50) =>
+    request<Page<BranchResponse>>(`/branches?page=${page}&size=${size}`, { token }),
+  create: (token: string, payload: BranchRequest) =>
+    request<BranchResponse>('/branches', { method: 'POST', body: payload, token }),
+}
+
+export const adminAccountApi = {
+  create: (token: string, customerId: number, payload: AccountRequest) =>
+    request<AccountResponse>(`/accounts/customer/${customerId}`, { method: 'POST', body: payload, token }),
+}
+
+export const auditLogApi = {
+  list: (token: string, page = 0, size = 15) =>
+    request<Page<AuditLogResponse>>(`/audit-logs?page=${page}&size=${size}&sort=timestamp,desc`, { token }),
 }
 
 export const notificationApi = {

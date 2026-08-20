@@ -17,6 +17,7 @@ const TRANSLATIONS: Array<[RegExp, string]> = [
   [/too many failed login attempts/i, 'Çok fazla başarısız deneme yapıldı. Lütfen daha sonra tekrar deneyin.'],
   [/email already in use/i, 'Bu e-posta adresi zaten kullanımda.'],
   [/already has a login account/i, 'Bu müşterinin zaten bir giriş bilgisi var.'],
+  [/customer already has an account/i, 'Bu müşterinin zaten bir hesabı var.'],
   [/national id already registered/i, 'Bu T.C. Kimlik No zaten kayıtlı.'],
   [/refresh token has expired/i, 'Oturumunuzun süresi doldu, lütfen tekrar giriş yapın.'],
   [/account not found/i, 'Hesap bulunamadı.'],
