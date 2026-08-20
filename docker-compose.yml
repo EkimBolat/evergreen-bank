@@ -24,5 +24,13 @@ services:
     ports:
       - "8080:8080"
 
+  frontend:
+    build: ./frontend
+    container_name: banking-frontend
+    depends_on:
+      - app
+    ports:
+      - "3000:80"
+
 volumes:
   postgres_data:

@@ -37,7 +37,8 @@ Every deposit, withdrawal, and transfer earns customers **Nature Points**. Once 
 - 🛡️ **Fraud protection**: brute-force login lockout, daily/monthly withdrawal limits
 - 🌱 **Nature Points**: gamified sustainability system with anti-abuse safeguards
 - 🏦 **Full banking core**: accounts (Checking/Savings), transfers, transaction history, branches
-- 💳 **Debit card management**: issuance, masked listing, block/activate
+- 💳 **Debit & credit card management**: issuance, masked listing, block/activate/permanent cancel, credit limits with charge/pay, automatic statement billing and late-payment interest
+- 🖥️ **React web frontend**: login/register/2FA, dashboard (balance, transfers, deposit/withdraw, live notifications), card management — served via nginx, no separate setup needed
 - ⏰ **Scheduled recurring transfers** (daily/weekly/monthly), processed via nightly batch job
 - 📈 **Monthly interest accrual** for savings accounts, processed via nightly batch job
 - 🔔 **In-app notifications**, pushed live over WebSocket (STOMP) in addition to REST polling
@@ -48,13 +49,11 @@ Every deposit, withdrawal, and transfer earns customers **Nature Points**. Once 
 
 ## 🛠️ Tech Stack
 
-- Java 21
-- Spring Boot 4.1.0
-- PostgreSQL
-- Spring Data JPA
-- Docker
-- JWT Authentication
-- Maven
+**Backend:** Java 21 · Spring Boot 4.1.0 · PostgreSQL · Spring Data JPA · Spring Security (JWT) · WebSocket (STOMP) · Maven
+
+**Frontend:** React · TypeScript · Vite · Tailwind CSS · nginx (production)
+
+**Infra:** Docker Compose (db + backend + frontend, one command)
 
 ---
 
@@ -71,7 +70,12 @@ Copy `.env.example` and set your own `DB_PASSWORD` and `JWT_SECRET` as environme
 docker compose up --build
 ```
 
-The API will be available at `http://localhost:8080`, with interactive documentation at `http://localhost:8080/swagger-ui/index.html`.
+This starts everything: PostgreSQL, the API, and the web app.
+
+- **Web app:** `http://localhost:3000`
+- **API:** `http://localhost:8080`, with interactive documentation at `http://localhost:8080/swagger-ui/index.html`
+
+A default admin account is seeded automatically on first startup (see `admin.bootstrap.*` in `.env.example` to customize or disable it) — that's your way in on a fresh database, since there's no self-service customer signup.
 
 ---
 
@@ -92,9 +96,11 @@ The API will be available at `http://localhost:8080`, with interactive documenta
 - [x] Scheduled/Recurring Transfers
 - [x] Monthly Interest Accrual (Savings Accounts)
 - [x] In-App Notifications + Real-Time WebSocket Push
-- [x] Debit Card Management (Issue / Block / Activate)
+- [x] Debit & Credit Card Management (Issue / Block / Activate / Permanent Cancel)
+- [x] Credit Card Billing (Statements, Minimum Payment, Late Interest)
 - [x] CSV Statement Export
 - [x] TOTP Two-Factor Authentication
+- [x] React Web Frontend (Dockerized, served via nginx)
 
 ---
 
