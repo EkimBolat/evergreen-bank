@@ -18,6 +18,7 @@ import type {
   RegisterRequest,
   TransactionResponse,
   TransferResponse,
+  TreeCertificateResponse,
   TwoFactorVerifyRequest,
 } from './types'
 
@@ -154,6 +155,12 @@ export const customerApi = {
     request<Page<CustomerResponse>>(`/customers?page=${page}&size=${size}`, { token }),
   create: (token: string, payload: CustomerRequest) =>
     request<CustomerResponse>('/customers', { method: 'POST', body: payload, token }),
+  getMe: (token: string) => request<CustomerResponse>('/customers/me', { token }),
+}
+
+export const natureApi = {
+  getMyCertificates: (token: string) =>
+    request<TreeCertificateResponse[]>('/nature/certificates/me', { token }),
 }
 
 export const branchApi = {

@@ -204,6 +204,18 @@ export interface AuditLogResponse {
   timestamp: string
 }
 
+export type TreeSpecies = 'OAK' | 'PINE' | 'LINDEN' | 'CHESTNUT' | 'BIRCH'
+
+export interface TreeCertificateResponse {
+  id: number
+  customerId: number
+  customerFullName: string
+  certificateNumber: string
+  species: TreeSpecies
+  plantingRegion: string
+  plantedAt: string
+}
+
 export interface Page<T> {
   content: T[]
   totalElements: number

@@ -37,6 +37,9 @@ export function Layout({ children }: { children: ReactNode }) {
                   <NavLink to="/cards" className={navLinkClass}>
                     Kartlarım
                   </NavLink>
+                  <NavLink to="/nature" className={navLinkClass}>
+                    Doğa Puanım
+                  </NavLink>
                 </>
               )}
             </nav>

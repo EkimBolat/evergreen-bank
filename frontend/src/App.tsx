@@ -5,6 +5,7 @@ import { AdminPage } from './pages/AdminPage'
 import { CardsPage } from './pages/CardsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
+import { NaturePage } from './pages/NaturePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { TwoFactorPage } from './pages/TwoFactorPage'
 
@@ -28,6 +29,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CardsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nature"
+          element={
+            <ProtectedRoute>
+              <NaturePage />
             </ProtectedRoute>
           }
         />
