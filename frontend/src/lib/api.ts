@@ -17,6 +17,8 @@ import type {
   NotificationResponse,
   Page,
   RegisterRequest,
+  ScheduledTransferRequest,
+  ScheduledTransferResponse,
   TransactionResponse,
   TransferResponse,
   TreeCertificateResponse,
@@ -113,6 +115,14 @@ export const transactionApi = {
 export const transferApi = {
   send: (token: string, payload: { fromAccountId: number; toAccountId: number; amount: number }) =>
     request<TransferResponse>('/transfers', { method: 'POST', body: payload, token }),
+}
+
+export const scheduledTransferApi = {
+  list: (token: string) => request<ScheduledTransferResponse[]>('/scheduled-transfers/me', { token }),
+  create: (token: string, payload: ScheduledTransferRequest) =>
+    request<ScheduledTransferResponse>('/scheduled-transfers', { method: 'POST', body: payload, token }),
+  cancel: (token: string, id: number) =>
+    request<void>(`/scheduled-transfers/${id}`, { method: 'DELETE', token }),
 }
 
 export const cardApi = {

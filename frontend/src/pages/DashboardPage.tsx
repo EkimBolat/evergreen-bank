@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DepositWithdrawForm } from '../components/DepositWithdrawForm'
 import { Layout } from '../components/Layout'
+import { ScheduledTransferPanel } from '../components/ScheduledTransferPanel'
 import { TransferForm } from '../components/TransferForm'
 import { Card } from '../components/ui'
 import { accountApi, transactionApi, ApiError } from '../lib/api'
@@ -140,6 +141,13 @@ export function DashboardPage() {
               <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.monthlyLimit)}</p>
             </Card>
           </div>
+
+          <Card>
+            <div className="border-b border-ink-100 px-5 py-4">
+              <h2 className="text-sm font-semibold text-ink-900">Otomatik Transferler</h2>
+            </div>
+            <ScheduledTransferPanel account={account} />
+          </Card>
 
           <Card>
             <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">

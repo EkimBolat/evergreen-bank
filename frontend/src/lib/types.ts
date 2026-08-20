@@ -59,6 +59,25 @@ export interface TransferResponse {
   timestamp: string
 }
 
+export type Frequency = 'DAILY' | 'WEEKLY' | 'MONTHLY'
+
+export interface ScheduledTransferRequest {
+  fromAccountId: number
+  toAccountId: number
+  amount: number
+  frequency: Frequency
+}
+
+export interface ScheduledTransferResponse {
+  id: number
+  fromAccountNumber: string
+  toAccountNumber: string
+  amount: number
+  frequency: Frequency
+  nextExecutionDate: string
+  active: boolean
+}
+
 export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'INTEREST'
 
 export interface TransactionResponse {
