@@ -9,12 +9,15 @@ import type {
   AccountResponse,
   CardIssuedResponse,
   CardResponse,
+  CardStatus,
   CardType,
   CreditCardStatementResponse,
   CreditCardTransactionResponse,
 } from '../lib/types'
 
 type CardAction = 'charge' | 'pay' | 'statements'
+
+const CARD_STATUS_ORDER: Record<CardStatus, number> = { ACTIVE: 0, BLOCKED: 1, CANCELLED: 2 }
 
 export function CardsPage() {
   const { token } = useAuth()
@@ -222,7 +225,9 @@ export function CardsPage() {
             </Card>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2">
-              {cards.map((card) => (
+              {[...cards]
+                .sort((a, b) => CARD_STATUS_ORDER[a.status] - CARD_STATUS_ORDER[b.status])
+                .map((card) => (
                 <CardTile
                   key={card.id}
                   card={card}
