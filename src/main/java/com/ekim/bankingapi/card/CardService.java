@@ -3,11 +3,13 @@ package com.ekim.bankingapi.card;
 import com.ekim.bankingapi.account.Account;
 import com.ekim.bankingapi.account.AccountService;
 import com.ekim.bankingapi.audit.AuditLogService;
+import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import com.ekim.bankingapi.notification.NotificationService;
 import com.ekim.bankingapi.notification.NotificationType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,7 +32,7 @@ public class CardService {
     private final NotificationService notificationService;
 
     public CardIssuedResponse issueCard(Long accountId, CardIssueRequest request) {
-        Account account = accountService.findAccountEntityById(accountId);
+        Account account = accountService.requireOwnedAccount(accountId);
 
         CardType cardType = request.getCardType() == null ? CardType.DEBIT : request.getCardType();
         if (cardType == CardType.CREDIT && request.getCreditLimit() == null) {
@@ -68,7 +70,7 @@ public class CardService {
     }
 
     public List<CardResponse> getCardsForAccount(Long accountId) {
-        accountService.findAccountEntityById(accountId);
+        accountService.requireOwnedAccount(accountId);
         return cardRepository.findByAccountId(accountId).stream()
                 .map(CardResponse::fromEntity)
                 .toList();
@@ -79,7 +81,7 @@ public class CardService {
     }
 
     public CardResponse blockCard(Long id) {
-        Card card = findCardEntityById(id);
+        Card card = requireOwnedCard(id);
 
         if (card.getStatus() == CardStatus.CANCELLED) {
             throw new InvalidRequestException("Cancelled cards cannot be blocked");
@@ -100,7 +102,7 @@ public class CardService {
     }
 
     public CardResponse activateCard(Long id) {
-        Card card = findCardEntityById(id);
+        Card card = requireOwnedCard(id);
 
         if (card.getStatus() == CardStatus.CANCELLED) {
             throw new InvalidRequestException("Cancelled cards cannot be reactivated");
@@ -118,7 +120,7 @@ public class CardService {
     }
 
     public CardResponse cancelCard(Long id) {
-        Card card = findCardEntityById(id);
+        Card card = requireOwnedCard(id);
 
         if (card.getStatus() == CardStatus.CANCELLED) {
             throw new InvalidRequestException("Card is already cancelled");
@@ -138,6 +140,22 @@ public class CardService {
     Card findCardEntityById(Long id) {
         return cardRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found with id: " + id));
+    }
+
+    Card requireOwnedCard(Long id) {
+        Card card = findCardEntityById(id);
+        if (!card.getAccount().getCustomer().getId().equals(currentCustomerId())) {
+            throw new InvalidCredentialsException("You do not have access to this card");
+        }
+        return card;
+    }
+
+    private Long currentCustomerId() {
+        Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
+        if (!(details instanceof Long customerId)) {
+            throw new InvalidCredentialsException("Unable to resolve authenticated customer");
+        }
+        return customerId;
     }
 
     private String generateUniqueCardNumber() {

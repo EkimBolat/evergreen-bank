@@ -1,12 +1,14 @@
 package com.ekim.bankingapi.card;
 
 import com.ekim.bankingapi.audit.AuditLogService;
+import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import com.ekim.bankingapi.notification.NotificationService;
 import com.ekim.bankingapi.notification.NotificationType;
 import com.ekim.bankingapi.transaction.TransactionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -110,10 +112,21 @@ public class CreditCardService {
     private Card findCreditCard(Long cardId) {
         Card card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found with id: " + cardId));
+        if (!card.getAccount().getCustomer().getId().equals(currentCustomerId())) {
+            throw new InvalidCredentialsException("You do not have access to this card");
+        }
         if (card.getCardType() != CardType.CREDIT) {
             throw new InvalidRequestException("This operation is only valid for credit cards");
         }
         return card;
+    }
+
+    private Long currentCustomerId() {
+        Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
+        if (!(details instanceof Long customerId)) {
+            throw new InvalidCredentialsException("Unable to resolve authenticated customer");
+        }
+        return customerId;
     }
 
     private void requireActive(Card card) {

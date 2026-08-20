@@ -8,12 +8,15 @@ import com.ekim.bankingapi.notification.NotificationService;
 import com.ekim.bankingapi.notification.NotificationType;
 import com.ekim.bankingapi.transaction.TransactionResponse;
 import com.ekim.bankingapi.transaction.TransactionService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -69,6 +72,20 @@ class CreditCardServiceTest {
         creditCard.setCreditLimit(BigDecimal.valueOf(1000));
         creditCard.setCurrentBalance(BigDecimal.valueOf(200));
         creditCard.setApr(BigDecimal.valueOf(42));
+
+        authenticateAs(1L);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long customerId) {
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken("ahmet@example.com", null, List.of());
+        authToken.setDetails(customerId);
+        SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 
     @Test
@@ -189,6 +206,20 @@ class CreditCardServiceTest {
 
         assertThat(statement.getPaidAmount()).isEqualByComparingTo(BigDecimal.valueOf(120));
         verify(creditCardStatementRepository).save(statement);
+    }
+
+    @Test
+    void charge_shouldThrow_whenCallerDoesNotOwnCard() {
+        authenticateAs(2L);
+        when(cardRepository.findById(5L)).thenReturn(Optional.of(creditCard));
+
+        CreditChargeRequest request = new CreditChargeRequest();
+        request.setAmount(BigDecimal.valueOf(10));
+
+        assertThatThrownBy(() -> creditCardService.charge(5L, request))
+                .isInstanceOf(com.ekim.bankingapi.exception.InvalidCredentialsException.class);
+
+        verify(cardRepository, never()).save(any());
     }
 
     @Test

@@ -8,12 +8,15 @@ import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import com.ekim.bankingapi.notification.NotificationService;
 import com.ekim.bankingapi.notification.NotificationType;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -56,9 +59,21 @@ class CardServiceTest {
         account.setCustomer(customer);
     }
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long customerId) {
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken("ahmet@example.com", null, List.of());
+        authToken.setDetails(customerId);
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+    }
+
     @Test
     void issueCard_shouldCreateDebitCard_byDefault() {
-        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(account);
         when(cardRepository.existsByCardNumber(anyString())).thenReturn(false);
         when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> {
             Card c = invocation.getArgument(0);
@@ -80,7 +95,7 @@ class CardServiceTest {
 
     @Test
     void issueCard_shouldCreateCreditCard_withLimitAndApr() {
-        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(account);
         when(cardRepository.existsByCardNumber(anyString())).thenReturn(false);
         when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> {
             Card c = invocation.getArgument(0);
@@ -108,7 +123,7 @@ class CardServiceTest {
 
     @Test
     void issueCard_shouldThrow_whenCreditCardHasNoLimit() {
-        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(account);
 
         CardIssueRequest request = new CardIssueRequest();
         request.setCardType(CardType.CREDIT);
@@ -129,7 +144,7 @@ class CardServiceTest {
         card.setStatus(CardStatus.ACTIVE);
         card.setCardType(CardType.DEBIT);
 
-        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(account);
         when(cardRepository.findByAccountId(1L)).thenReturn(List.of(card));
 
         List<CardResponse> responses = cardService.getCardsForAccount(1L);
@@ -148,6 +163,7 @@ class CardServiceTest {
 
     @Test
     void blockCard_shouldSetStatusBlocked_andNotifyCustomer() {
+        authenticateAs(1L);
         Card card = activeDebitCard();
 
         when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
@@ -161,6 +177,7 @@ class CardServiceTest {
 
     @Test
     void blockCard_shouldThrow_whenAlreadyBlocked() {
+        authenticateAs(1L);
         Card card = activeDebitCard();
         card.setStatus(CardStatus.BLOCKED);
 
@@ -174,6 +191,7 @@ class CardServiceTest {
 
     @Test
     void blockCard_shouldThrow_whenCardIsCancelled() {
+        authenticateAs(1L);
         Card card = activeDebitCard();
         card.setStatus(CardStatus.CANCELLED);
 
@@ -185,6 +203,7 @@ class CardServiceTest {
 
     @Test
     void activateCard_shouldSetStatusActive_whenCurrentlyBlocked() {
+        authenticateAs(1L);
         Card card = activeDebitCard();
         card.setStatus(CardStatus.BLOCKED);
 
@@ -198,6 +217,7 @@ class CardServiceTest {
 
     @Test
     void activateCard_shouldThrow_whenAlreadyActive() {
+        authenticateAs(1L);
         Card card = activeDebitCard();
 
         when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
@@ -210,6 +230,7 @@ class CardServiceTest {
 
     @Test
     void activateCard_shouldThrow_whenCardIsCancelled() {
+        authenticateAs(1L);
         Card card = activeDebitCard();
         card.setStatus(CardStatus.CANCELLED);
 
@@ -224,6 +245,7 @@ class CardServiceTest {
 
     @Test
     void cancelCard_shouldSetStatusCancelled_andNotifyCustomer() {
+        authenticateAs(1L);
         Card card = activeDebitCard();
 
         when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
@@ -237,6 +259,7 @@ class CardServiceTest {
 
     @Test
     void cancelCard_shouldThrow_whenAlreadyCancelled() {
+        authenticateAs(1L);
         Card card = activeDebitCard();
         card.setStatus(CardStatus.CANCELLED);
 
@@ -244,6 +267,19 @@ class CardServiceTest {
 
         assertThatThrownBy(() -> cardService.cancelCard(1L))
                 .isInstanceOf(InvalidRequestException.class);
+
+        verify(cardRepository, never()).save(any());
+    }
+
+    @Test
+    void blockCard_shouldThrow_whenCallerDoesNotOwnCard() {
+        authenticateAs(2L);
+        Card card = activeDebitCard();
+
+        when(cardRepository.findById(1L)).thenReturn(Optional.of(card));
+
+        assertThatThrownBy(() -> cardService.blockCard(1L))
+                .isInstanceOf(com.ekim.bankingapi.exception.InvalidCredentialsException.class);
 
         verify(cardRepository, never()).save(any());
     }
