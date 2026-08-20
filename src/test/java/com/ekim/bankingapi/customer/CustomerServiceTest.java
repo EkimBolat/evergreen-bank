@@ -4,13 +4,18 @@ import com.ekim.bankingapi.audit.AuditLogService;
 import com.ekim.bankingapi.branch.BranchService;
 import com.ekim.bankingapi.exception.DuplicateResourceException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -107,5 +112,59 @@ class CustomerServiceTest {
         assertThatThrownBy(() -> customerService.getCustomerById(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("999");
+    }
+
+    @Test
+    void getCustomerById_shouldReturnDailyPoints_whenEarnedToday() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setDailyNaturePoints(35);
+        customer.setLastPointsDate(LocalDate.now());
+
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+
+        CustomerResponse response = customerService.getCustomerById(1L);
+
+        assertThat(response.getDailyNaturePoints()).isEqualTo(35);
+    }
+
+    @Test
+    void getCustomerById_shouldReturnZeroDailyPoints_whenLastEarnedOnAPreviousDay() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setDailyNaturePoints(50);
+        customer.setLastPointsDate(LocalDate.now().minusDays(1));
+
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+
+        CustomerResponse response = customerService.getCustomerById(1L);
+
+        assertThat(response.getDailyNaturePoints()).isZero();
+    }
+
+    @Test
+    void getMyProfile_shouldReturnAuthenticatedCustomersProfile() {
+        Customer customer = new Customer();
+        customer.setId(1L);
+        customer.setFirstName("Ahmet");
+        authenticateAs(1L);
+
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+
+        CustomerResponse response = customerService.getMyProfile();
+
+        assertThat(response.getFirstName()).isEqualTo("Ahmet");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long customerId) {
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken("ahmet@example.com", null, List.of());
+        authToken.setDetails(customerId);
+        SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 }
