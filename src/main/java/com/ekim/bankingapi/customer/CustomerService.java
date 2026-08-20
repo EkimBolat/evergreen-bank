@@ -4,10 +4,12 @@ import com.ekim.bankingapi.audit.AuditLogService;
 import com.ekim.bankingapi.branch.Branch;
 import com.ekim.bankingapi.branch.BranchService;
 import com.ekim.bankingapi.exception.DuplicateResourceException;
+import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -50,6 +52,19 @@ public class CustomerService {
     public CustomerResponse getCustomerById(Long id) {
         Customer customer = findCustomerEntityById(id);
         return CustomerResponse.fromEntity(customer);
+    }
+
+    public CustomerResponse getMyProfile() {
+        Customer customer = findCustomerEntityById(currentCustomerId());
+        return CustomerResponse.fromEntity(customer);
+    }
+
+    private Long currentCustomerId() {
+        Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
+        if (!(details instanceof Long customerId)) {
+            throw new InvalidCredentialsException("Unable to resolve authenticated customer");
+        }
+        return customerId;
     }
 
     public Page<CustomerResponse> getAllCustomers(Pageable pageable) {

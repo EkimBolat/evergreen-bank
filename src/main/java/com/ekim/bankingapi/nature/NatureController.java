@@ -1,9 +1,10 @@
 package com.ekim.bankingapi.nature;
 
+import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,9 +18,17 @@ public class NatureController {
 
     private final NatureService natureService;
 
-    @GetMapping("/certificates/customer/{customerId}")
-    public ResponseEntity<List<TreeCertificateResponse>> getCertificates(@PathVariable Long customerId) {
-        return ResponseEntity.ok(natureService.getCertificatesForCustomer(customerId));
+    @GetMapping("/certificates/me")
+    public ResponseEntity<List<TreeCertificateResponse>> getMyCertificates() {
+        return ResponseEntity.ok(natureService.getCertificatesForCustomer(currentCustomerId()));
+    }
+
+    private Long currentCustomerId() {
+        Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
+        if (!(details instanceof Long customerId)) {
+            throw new InvalidCredentialsException("Unable to resolve authenticated customer");
+        }
+        return customerId;
     }
 
     @GetMapping("/stats")

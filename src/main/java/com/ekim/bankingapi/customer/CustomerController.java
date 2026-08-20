@@ -21,6 +21,11 @@ public class CustomerController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<CustomerResponse> getMyProfile() {
+        return ResponseEntity.ok(customerService.getMyProfile());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponse> getCustomerById(@PathVariable Long id) {
         return ResponseEntity.ok(customerService.getCustomerById(id));
