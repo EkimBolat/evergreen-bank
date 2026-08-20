@@ -1,0 +1,35 @@
+<svg width="120" height="160" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- stems -->
+    <path d="M60 112 C 56 92, 44 74, 26 62" fill="none"/>
+    <path d="M60 112 C 59 88, 60 64, 60 44" fill="none"/>
+    <path d="M60 112 C 64 92, 78 74, 96 64" fill="none"/>
+    <path d="M60 112 C 58 98, 50 86, 38 80" fill="none"/>
+    <path d="M60 112 C 62 98, 70 86, 82 80" fill="none"/>
+
+    <!-- leaves -->
+    <path d="M26 62 C 4 50, -2 26, 12 8 C 36 16, 44 44, 26 62 Z" fill="#79C24A"/>
+    <path d="M60 44 C 54 22, 60 2, 78 -6 C 86 16, 78 38, 60 44 Z" fill="#6BB93E"/>
+    <path d="M96 64 C 118 54, 126 30, 114 10 C 92 18, 82 44, 96 64 Z" fill="#79C24A"/>
+    <path d="M38 80 C 22 74, 14 58, 20 42 C 38 48, 44 66, 38 80 Z" fill="#6BB93E"/>
+    <path d="M82 80 C 98 74, 106 58, 100 42 C 82 48, 76 66, 82 80 Z" fill="#79C24A"/>
+
+    <!-- leaf veins -->
+    <g stroke-width="2" opacity="0.65">
+      <path d="M26 62 C 20 46, 14 26, 10 12" fill="none"/>
+      <path d="M60 44 C 62 28, 66 8, 76 -4" fill="none"/>
+      <path d="M96 64 C 106 48, 114 28, 116 12" fill="none"/>
+      <path d="M38 80 C 30 70, 24 58, 21 44" fill="none"/>
+      <path d="M82 80 C 90 70, 96 58, 99 44" fill="none"/>
+    </g>
+
+    <!-- pot rim -->
+    <rect x="32" y="110" width="56" height="12" rx="3" fill="#F0A93A"/>
+
+    <!-- pot body -->
+    <path d="M34 122 L 86 122 L 77 154 C 65 158, 55 158, 43 154 Z" fill="#E0912B"/>
+
+    <!-- pot base line -->
+    <path d="M46 152 L 74 152" fill="none" stroke-width="2"/>
+  </g>
+</svg>

@@ -1,0 +1,26 @@
+<svg width="120" height="160" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- leaves: tall pointed blades -->
+    <path d="M60 116 C 50 90, 46 55, 60 10 C 70 55, 66 90, 60 116 Z" fill="#2F7D4A"/>
+    <path d="M60 116 C 46 96, 30 66, 26 28 C 44 42, 56 76, 60 116 Z" fill="#3C9457"/>
+    <path d="M60 116 C 74 96, 90 66, 94 28 C 76 42, 64 76, 60 116 Z" fill="#3C9457"/>
+    <path d="M60 116 C 50 100, 38 80, 34 54 C 48 62, 58 88, 60 116 Z" fill="#2F7D4A"/>
+    <path d="M60 116 C 70 100, 82 80, 86 54 C 72 62, 62 88, 60 116 Z" fill="#2F7D4A"/>
+
+    <!-- stripe details -->
+    <g stroke-width="1.6" opacity="0.6">
+      <path d="M60 108 C 55 80, 55 45, 60 16" fill="none"/>
+      <path d="M60 108 C 50 90, 40 66, 33 36" fill="none"/>
+      <path d="M60 108 C 70 90, 80 66, 87 36" fill="none"/>
+    </g>
+
+    <!-- pot rim -->
+    <rect x="30" y="110" width="60" height="12" rx="3" fill="#F5F1E4"/>
+
+    <!-- pot body -->
+    <path d="M32 122 L 88 122 L 79 156 C 66 160, 54 160, 41 156 Z" fill="#EDE6D3"/>
+
+    <!-- pot base line -->
+    <path d="M45 154 L 75 154" fill="none" stroke-width="2"/>
+  </g>
+</svg>

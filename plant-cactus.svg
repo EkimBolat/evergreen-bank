@@ -1,0 +1,28 @@
+<svg width="120" height="160" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- left arm -->
+    <path d="M42 96 C 22 96, 10 82, 14 64 C 18 50, 30 46, 38 52 C 34 66, 36 84, 42 96 Z" fill="#6FA85C"/>
+    <!-- right arm -->
+    <path d="M78 90 C 98 88, 108 72, 102 56 C 96 44, 84 42, 78 50 C 84 62, 84 78, 78 90 Z" fill="#6FA85C"/>
+    <!-- main body -->
+    <path d="M40 118 C 34 90, 34 54, 44 20 C 50 8, 70 8, 76 20 C 86 54, 86 90, 80 118 C 68 126, 52 126, 40 118 Z" fill="#7CB565"/>
+
+    <!-- ribs -->
+    <g stroke-width="1.6" opacity="0.6">
+      <path d="M52 122 C 46 92, 46 50, 54 14" fill="none"/>
+      <path d="M60 124 C 58 92, 58 50, 60 12" fill="none"/>
+      <path d="M68 122 C 74 92, 74 50, 66 14" fill="none"/>
+      <path d="M42 92 C 30 88, 22 78, 22 66" fill="none"/>
+      <path d="M78 86 C 90 82, 98 72, 96 60" fill="none"/>
+    </g>
+
+    <!-- pot rim -->
+    <rect x="30" y="116" width="60" height="12" rx="3" fill="#9C6B3E"/>
+
+    <!-- pot body -->
+    <path d="M32 128 L 88 128 L 80 158 C 67 162, 53 162, 40 158 Z" fill="#8A5A30"/>
+
+    <!-- pot base line -->
+    <path d="M45 156 L 75 156" fill="none" stroke-width="2"/>
+  </g>
+</svg>
