@@ -1,4 +1,5 @@
 import type {
+  AccountLookupResponse,
   AccountRequest,
   AccountResponse,
   AuditLogResponse,
@@ -77,7 +78,7 @@ export const authApi = {
 export const accountApi = {
   getMyAccount: (token: string) => request<AccountResponse>('/accounts/me', { token }),
   getByAccountNumber: (token: string, accountNumber: string) =>
-    request<AccountResponse>(`/accounts/number/${encodeURIComponent(accountNumber)}`, { token }),
+    request<AccountLookupResponse>(`/accounts/number/${encodeURIComponent(accountNumber)}`, { token }),
 }
 
 export const transactionApi = {

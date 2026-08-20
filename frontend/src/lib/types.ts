@@ -45,6 +45,12 @@ export interface AccountResponse {
   createdAt: string
 }
 
+export interface AccountLookupResponse {
+  id: number
+  accountNumber: string
+  customerFullName: string
+}
+
 export interface TransferResponse {
   id: number
   fromAccountNumber: string
