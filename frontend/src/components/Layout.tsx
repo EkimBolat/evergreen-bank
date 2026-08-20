@@ -25,16 +25,19 @@ export function Layout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-6">
             <Logo size={36} withWordmark />
             <nav className="flex items-center gap-1">
-              <NavLink to="/dashboard" className={navLinkClass}>
-                Panel
-              </NavLink>
-              <NavLink to="/cards" className={navLinkClass}>
-                Kartlarım
-              </NavLink>
-              {role === 'ADMIN' && (
+              {role === 'ADMIN' ? (
                 <NavLink to="/admin" className={navLinkClass}>
                   Admin
                 </NavLink>
+              ) : (
+                <>
+                  <NavLink to="/dashboard" className={navLinkClass}>
+                    Panel
+                  </NavLink>
+                  <NavLink to="/cards" className={navLinkClass}>
+                    Kartlarım
+                  </NavLink>
+                </>
               )}
             </nav>
           </div>
