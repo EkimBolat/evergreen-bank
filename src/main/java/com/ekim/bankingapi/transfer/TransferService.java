@@ -41,7 +41,7 @@ public class TransferService {
             throw new InvalidRequestException("Cannot transfer to the same account");
         }
 
-        Account fromAccount = accountService.findAccountEntityById(fromAccountId);
+        Account fromAccount = accountService.requireOwnedAccount(fromAccountId);
         Account toAccount = accountService.findAccountEntityById(toAccountId);
 
         if (fromAccount.getBalance().compareTo(amount) < 0) {

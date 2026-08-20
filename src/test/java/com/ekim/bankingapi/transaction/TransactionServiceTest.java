@@ -62,7 +62,7 @@ class TransactionServiceTest {
 
     @Test
     void deposit_shouldIncreaseBalance_whenAmountIsValid() {
-        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(account);
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         TransactionResponse response = transactionService.deposit(1L, BigDecimal.valueOf(100));
@@ -83,7 +83,7 @@ class TransactionServiceTest {
 
     @Test
     void withdraw_shouldDecreaseBalance_whenSufficientFunds() {
-        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(account);
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         TransactionResponse response = transactionService.withdraw(1L, BigDecimal.valueOf(200));
@@ -94,7 +94,7 @@ class TransactionServiceTest {
 
     @Test
     void withdraw_shouldThrow_whenInsufficientBalance() {
-        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(account);
 
         assertThatThrownBy(() -> transactionService.withdraw(1L, BigDecimal.valueOf(999999)))
                 .isInstanceOf(InsufficientBalanceException.class);
@@ -111,7 +111,7 @@ class TransactionServiceTest {
         transaction.setBalanceAfter(BigDecimal.valueOf(600));
         transaction.setTimestamp(LocalDateTime.of(2026, 1, 15, 10, 30));
 
-        when(accountService.findAccountEntityById(1L)).thenReturn(account);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(account);
         when(transactionRepository.findByAccountIdOrderByTimestampDesc(1L)).thenReturn(List.of(transaction));
 
         byte[] csv = transactionService.exportStatementCsv(1L);
@@ -123,7 +123,7 @@ class TransactionServiceTest {
 
     @Test
     void exportStatementCsv_shouldThrow_whenAccountNotFound() {
-        when(accountService.findAccountEntityById(999L))
+        when(accountService.requireOwnedAccount(999L))
                 .thenThrow(new ResourceNotFoundException("Account not found with id: 999"));
 
         assertThatThrownBy(() -> transactionService.exportStatementCsv(999L))

@@ -34,7 +34,7 @@ public class TransactionService {
     public TransactionResponse deposit(Long accountId, BigDecimal amount) {
         validateAmount(amount);
 
-        Account account = accountService.findAccountEntityById(accountId);
+        Account account = accountService.requireOwnedAccount(accountId);
 
         BigDecimal newBalance = account.getBalance().add(amount);
         account.setBalance(newBalance);
@@ -56,7 +56,7 @@ public class TransactionService {
     public TransactionResponse withdraw(Long accountId, BigDecimal amount) {
         validateAmount(amount);
 
-        Account account = accountService.findAccountEntityById(accountId);
+        Account account = accountService.requireOwnedAccount(accountId);
 
         if (account.getBalance().compareTo(amount) < 0) {
             log.warn("Withdrawal failed - insufficient balance: accountId={}, requested={}, available={}",
@@ -83,12 +83,13 @@ public class TransactionService {
     }
 
     public Page<TransactionResponse> getTransactionHistory(Long accountId, Pageable pageable) {
+        accountService.requireOwnedAccount(accountId);
         return transactionRepository.findByAccountId(accountId, pageable)
                 .map(TransactionResponse::fromEntity);
     }
 
     public byte[] exportStatementCsv(Long accountId) {
-        accountService.findAccountEntityById(accountId);
+        accountService.requireOwnedAccount(accountId);
         List<Transaction> transactions = transactionRepository.findByAccountIdOrderByTimestampDesc(accountId);
         return buildCsv(transactions).getBytes(StandardCharsets.UTF_8);
     }

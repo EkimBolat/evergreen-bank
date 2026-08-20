@@ -77,7 +77,7 @@ class TransferServiceTest {
         request.setToAccountId(2L);
         request.setAmount(BigDecimal.valueOf(150));
 
-        when(accountService.findAccountEntityById(1L)).thenReturn(fromAccount);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(fromAccount);
         when(accountService.findAccountEntityById(2L)).thenReturn(toAccount);
         when(transferRepository.save(any(Transfer.class))).thenAnswer(invocation -> {
             Transfer t = invocation.getArgument(0);
@@ -114,7 +114,7 @@ class TransferServiceTest {
         request.setToAccountId(2L);
         request.setAmount(BigDecimal.valueOf(999999));
 
-        when(accountService.findAccountEntityById(1L)).thenReturn(fromAccount);
+        when(accountService.requireOwnedAccount(1L)).thenReturn(fromAccount);
         when(accountService.findAccountEntityById(2L)).thenReturn(toAccount);
 
         assertThatThrownBy(() -> transferService.transfer(request))

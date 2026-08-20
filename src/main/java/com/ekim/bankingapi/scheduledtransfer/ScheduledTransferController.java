@@ -21,9 +21,9 @@ public class ScheduledTransferController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<ScheduledTransferResponse>> getScheduledTransfers(@PathVariable Long customerId) {
-        return ResponseEntity.ok(scheduledTransferService.getScheduledTransfersForCustomer(customerId));
+    @GetMapping("/me")
+    public ResponseEntity<List<ScheduledTransferResponse>> getMyScheduledTransfers() {
+        return ResponseEntity.ok(scheduledTransferService.getMyScheduledTransfers());
     }
 
     @DeleteMapping("/{id}")

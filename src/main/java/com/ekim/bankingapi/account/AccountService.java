@@ -62,10 +62,10 @@ public class AccountService {
         return AccountResponse.fromEntity(account);
     }
 
-    public AccountResponse getAccountByNumber(String accountNumber) {
+    public AccountLookupResponse getAccountByNumber(String accountNumber) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + accountNumber));
-        return AccountResponse.fromEntity(account);
+        return AccountLookupResponse.fromEntity(account);
     }
 
     public Page<AccountResponse> getAllAccounts(Pageable pageable) {
@@ -77,6 +77,15 @@ public class AccountService {
         Account account = accountRepository.findByCustomerId(currentCustomerId())
                 .orElseThrow(() -> new ResourceNotFoundException("No account found for the current customer"));
         return AccountResponse.fromEntity(account);
+    }
+
+    // Para hareketi başlatan servisler (deposit/withdraw/transfer/scheduled transfer), işlemden ÖNCE bu kontrolü çağırır
+    public Account requireOwnedAccount(Long accountId) {
+        Account account = findAccountEntityById(accountId);
+        if (!account.getCustomer().getId().equals(currentCustomerId())) {
+            throw new InvalidCredentialsException("You do not have access to this account");
+        }
+        return account;
     }
 
     private Long currentCustomerId() {

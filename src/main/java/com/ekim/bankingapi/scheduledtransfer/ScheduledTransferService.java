@@ -2,6 +2,7 @@ package com.ekim.bankingapi.scheduledtransfer;
 
 import com.ekim.bankingapi.account.Account;
 import com.ekim.bankingapi.account.AccountService;
+import com.ekim.bankingapi.exception.InvalidCredentialsException;
 import com.ekim.bankingapi.exception.InvalidRequestException;
 import com.ekim.bankingapi.exception.ResourceNotFoundException;
 import com.ekim.bankingapi.notification.NotificationService;
@@ -11,6 +12,7 @@ import com.ekim.bankingapi.transfer.TransferService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -31,7 +33,7 @@ public class ScheduledTransferService {
             throw new InvalidRequestException("Cannot schedule a transfer to the same account");
         }
 
-        Account fromAccount = accountService.findAccountEntityById(request.getFromAccountId());
+        Account fromAccount = accountService.requireOwnedAccount(request.getFromAccountId());
         Account toAccount = accountService.findAccountEntityById(request.getToAccountId());
 
         ScheduledTransfer scheduledTransfer = new ScheduledTransfer();
@@ -46,8 +48,8 @@ public class ScheduledTransferService {
         return ScheduledTransferResponse.fromEntity(saved);
     }
 
-    public List<ScheduledTransferResponse> getScheduledTransfersForCustomer(Long customerId) {
-        return scheduledTransferRepository.findByFromAccountCustomerId(customerId).stream()
+    public List<ScheduledTransferResponse> getMyScheduledTransfers() {
+        return scheduledTransferRepository.findByFromAccountCustomerId(currentCustomerId()).stream()
                 .map(ScheduledTransferResponse::fromEntity)
                 .toList();
     }
@@ -55,8 +57,19 @@ public class ScheduledTransferService {
     public void cancelScheduledTransfer(Long id) {
         ScheduledTransfer scheduledTransfer = scheduledTransferRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Scheduled transfer not found with id: " + id));
+        if (!scheduledTransfer.getFromAccount().getCustomer().getId().equals(currentCustomerId())) {
+            throw new InvalidCredentialsException("You do not have access to this scheduled transfer");
+        }
         scheduledTransfer.setActive(false);
         scheduledTransferRepository.save(scheduledTransfer);
+    }
+
+    private Long currentCustomerId() {
+        Object details = SecurityContextHolder.getContext().getAuthentication().getDetails();
+        if (!(details instanceof Long customerId)) {
+            throw new InvalidCredentialsException("Unable to resolve authenticated customer");
+        }
+        return customerId;
     }
 
     @Scheduled(cron = "0 0 1 * * *")

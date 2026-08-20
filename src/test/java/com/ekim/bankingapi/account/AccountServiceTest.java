@@ -191,6 +191,35 @@ class AccountServiceTest {
                 .isInstanceOf(InvalidCredentialsException.class);
     }
 
+    @Test
+    void requireOwnedAccount_shouldReturnAccount_whenCallerOwnsIt() {
+        authenticateAs(1L);
+
+        Account account = new Account();
+        account.setId(5L);
+        account.setCustomer(customer);
+
+        when(accountRepository.findById(5L)).thenReturn(Optional.of(account));
+
+        Account result = accountService.requireOwnedAccount(5L);
+
+        assertThat(result.getId()).isEqualTo(5L);
+    }
+
+    @Test
+    void requireOwnedAccount_shouldThrow_whenAccountBelongsToAnotherCustomer() {
+        authenticateAs(2L);
+
+        Account account = new Account();
+        account.setId(5L);
+        account.setCustomer(customer);
+
+        when(accountRepository.findById(5L)).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> accountService.requireOwnedAccount(5L))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
     private void authenticateAs(Long customerId) {
         UsernamePasswordAuthenticationToken authToken =
                 new UsernamePasswordAuthenticationToken("ahmet@example.com", null, List.of());
