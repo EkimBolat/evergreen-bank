@@ -3,6 +3,7 @@ package com.ekim.bankingapi.auth;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class TwoFactorController {
 
     private final AuthService authService;
+
+    @GetMapping("/status")
+    public ResponseEntity<TwoFactorStatusResponse> status() {
+        return ResponseEntity.ok(authService.getTwoFactorStatus());
+    }
 
     @PostMapping("/setup")
     public ResponseEntity<TwoFactorSetupResponse> setup() {

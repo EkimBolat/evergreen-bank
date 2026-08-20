@@ -22,6 +22,9 @@ import type {
   TransactionResponse,
   TransferResponse,
   TreeCertificateResponse,
+  TwoFactorCodeRequest,
+  TwoFactorSetupResponse,
+  TwoFactorStatusResponse,
   TwoFactorVerifyRequest,
 } from './types'
 
@@ -75,6 +78,15 @@ export const authApi = {
     request<AuthResponse>('/auth/register', { method: 'POST', body: payload }),
   verifyTwoFactor: (payload: TwoFactorVerifyRequest) =>
     request<AuthResponse>('/2fa/verify', { method: 'POST', body: payload }),
+}
+
+export const twoFactorApi = {
+  status: (token: string) => request<TwoFactorStatusResponse>('/2fa/status', { token }),
+  setup: (token: string) => request<TwoFactorSetupResponse>('/2fa/setup', { method: 'POST', token }),
+  enable: (token: string, payload: TwoFactorCodeRequest) =>
+    request<void>('/2fa/enable', { method: 'POST', body: payload, token }),
+  disable: (token: string, payload: TwoFactorCodeRequest) =>
+    request<void>('/2fa/disable', { method: 'POST', body: payload, token }),
 }
 
 export const accountApi = {

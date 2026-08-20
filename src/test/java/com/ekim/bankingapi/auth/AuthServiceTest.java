@@ -297,6 +297,22 @@ class AuthServiceTest {
     }
 
     @Test
+    void getTwoFactorStatus_shouldReflectCurrentUserState() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        user.setTwoFactorEnabled(true);
+        authenticateAs("ahmet@example.com");
+
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+
+        TwoFactorStatusResponse response = authService.getTwoFactorStatus();
+
+        assertThat(response.isEnabled()).isTrue();
+    }
+
+    @Test
     void setupTwoFactor_shouldGenerateAndPersistSecret_forCurrentUser() {
         User user = new User();
         user.setId(1L);

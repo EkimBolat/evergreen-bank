@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { NaturePage } from './pages/NaturePage'
 import { RegisterPage } from './pages/RegisterPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { TwoFactorPage } from './pages/TwoFactorPage'
 
 function App() {
@@ -37,6 +38,14 @@ function App() {
           element={
             <ProtectedRoute>
               <NaturePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />

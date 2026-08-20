@@ -150,6 +150,10 @@ public class AuthService {
         return AuthResponse.authenticated(user.getId(), customer.getId(), user.getEmail(), "Login successful", token, user.getRole(), refreshToken);
     }
 
+    public TwoFactorStatusResponse getTwoFactorStatus() {
+        return new TwoFactorStatusResponse(currentUser().isTwoFactorEnabled());
+    }
+
     public TwoFactorSetupResponse setupTwoFactor() {
         User user = currentUser();
 

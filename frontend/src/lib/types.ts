@@ -28,6 +28,19 @@ export interface TwoFactorVerifyRequest {
   code: string
 }
 
+export interface TwoFactorStatusResponse {
+  enabled: boolean
+}
+
+export interface TwoFactorSetupResponse {
+  secret: string
+  otpAuthUri: string
+}
+
+export interface TwoFactorCodeRequest {
+  code: string
+}
+
 export type AccountType = 'CHECKING' | 'SAVINGS'
 
 export interface AccountResponse {
