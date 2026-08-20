@@ -207,6 +207,7 @@ export interface CustomerResponse {
   branchName: string | null
   naturePoints: number
   treesPlanted: number
+  dailyNaturePoints: number
   createdAt: string
 }
 

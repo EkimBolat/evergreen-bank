@@ -8,6 +8,7 @@ import { formatDate } from '../lib/format'
 import type { CustomerResponse, TreeCertificateResponse, TreeSpecies } from '../lib/types'
 
 const POINTS_PER_TREE = 100
+const DAILY_POINTS_CAP = 50
 
 export function NaturePage() {
   const { token } = useAuth()
@@ -59,6 +60,7 @@ export function NaturePage() {
             <h1 className="text-xl font-bold text-ink-900">Doğa Puanım</h1>
             <p className="mt-1 text-sm text-ink-500">
               50₺ ve üzeri her işlemde doğa puanı kazanırsınız; 100 puanda sizin adınıza bir fidan dikilir.
+              Günlük en fazla {DAILY_POINTS_CAP} puan kazanabilirsiniz.
             </p>
           </div>
 
@@ -80,6 +82,9 @@ export function NaturePage() {
                 style={{ width: `${Math.min(progressPercent, 100)}%` }}
               />
             </div>
+            <p className="mt-3 text-xs text-brand-100">
+              Bugün kazanılan: {profile.dailyNaturePoints} / {DAILY_POINTS_CAP} puan
+            </p>
           </div>
 
           <Card>
