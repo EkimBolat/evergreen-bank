@@ -51,6 +51,8 @@ export interface AccountResponse {
   interestRate: number | null
   dailyLimit: number
   monthlyLimit: number
+  dailyLimitRemaining: number
+  monthlyLimitRemaining: number
   branchId: number | null
   branchName: string | null
   customerId: number

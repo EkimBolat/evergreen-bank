@@ -135,10 +135,12 @@ export function DashboardPage() {
             <Card className="p-5">
               <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Günlük Çekim Limiti</p>
               <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.dailyLimit)}</p>
+              <p className="mt-1 text-xs text-ink-500">Kalan: {formatCurrency(account.dailyLimitRemaining)}</p>
             </Card>
             <Card className="p-5">
               <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Aylık Çekim Limiti</p>
               <p className="mt-1.5 text-lg font-semibold text-ink-900">{formatCurrency(account.monthlyLimit)}</p>
+              <p className="mt-1 text-xs text-ink-500">Kalan: {formatCurrency(account.monthlyLimitRemaining)}</p>
             </Card>
           </div>
 
