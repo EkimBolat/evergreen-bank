@@ -19,6 +19,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -152,6 +154,46 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.getAccountById(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("999");
+    }
+
+    @Test
+    void getAccountById_shouldSubtractWithdrawnAmounts_whenUsedToday() {
+        Account account = new Account();
+        account.setId(1L);
+        account.setCustomer(customer);
+        account.setDailyLimit(BigDecimal.valueOf(50000));
+        account.setMonthlyLimit(BigDecimal.valueOf(500000));
+        account.setDailyWithdrawnAmount(BigDecimal.valueOf(15000));
+        account.setLastWithdrawalDate(LocalDate.now());
+        account.setMonthlyWithdrawnAmount(BigDecimal.valueOf(80000));
+        account.setLastWithdrawalMonth(YearMonth.now().toString());
+
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+
+        AccountResponse response = accountService.getAccountById(1L);
+
+        assertThat(response.getDailyLimitRemaining()).isEqualByComparingTo(BigDecimal.valueOf(35000));
+        assertThat(response.getMonthlyLimitRemaining()).isEqualByComparingTo(BigDecimal.valueOf(420000));
+    }
+
+    @Test
+    void getAccountById_shouldIgnoreStaleWithdrawnAmounts_fromPreviousDayAndMonth() {
+        Account account = new Account();
+        account.setId(1L);
+        account.setCustomer(customer);
+        account.setDailyLimit(BigDecimal.valueOf(50000));
+        account.setMonthlyLimit(BigDecimal.valueOf(500000));
+        account.setDailyWithdrawnAmount(BigDecimal.valueOf(50000));
+        account.setLastWithdrawalDate(LocalDate.now().minusDays(1));
+        account.setMonthlyWithdrawnAmount(BigDecimal.valueOf(500000));
+        account.setLastWithdrawalMonth(YearMonth.now().minusMonths(1).toString());
+
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+
+        AccountResponse response = accountService.getAccountById(1L);
+
+        assertThat(response.getDailyLimitRemaining()).isEqualByComparingTo(BigDecimal.valueOf(50000));
+        assertThat(response.getMonthlyLimitRemaining()).isEqualByComparingTo(BigDecimal.valueOf(500000));
     }
 
     @Test
