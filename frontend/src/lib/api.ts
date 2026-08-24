@@ -27,6 +27,7 @@ import type {
   TwoFactorStatusResponse,
   TwoFactorVerifyRequest,
 } from './types'
+import { clearStoredAuth, readStoredAuth, writeStoredAuth } from './auth-storage'
 
 const API_BASE = '/api/v1'
 
@@ -45,7 +46,45 @@ interface RequestOptions {
   token?: string | null
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+let onTokenRefreshed: ((token: string, refreshToken: string) => void) | null = null
+
+export function setOnTokenRefreshed(callback: typeof onTokenRefreshed): void {
+  onTokenRefreshed = callback
+}
+
+let refreshPromise: Promise<string | null> | null = null
+
+async function refreshAccessToken(): Promise<string | null> {
+  const stored = readStoredAuth()
+  if (!stored?.refreshToken) return null
+
+  try {
+    const response = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: stored.refreshToken }),
+    })
+    if (!response.ok) return null
+
+    const data = (await response.json()) as AuthResponse
+    if (!data.token || !data.refreshToken) return null
+
+    writeStoredAuth({ ...stored, token: data.token, refreshToken: data.refreshToken })
+    onTokenRefreshed?.(data.token, data.refreshToken)
+    return data.token
+  } catch {
+    return null
+  }
+}
+
+function forceLogout() {
+  clearStoredAuth()
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login'
+  }
+}
+
+async function request<T>(path: string, options: RequestOptions = {}, isRetry = false): Promise<T> {
   const headers: Record<string, string> = {}
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
   if (options.token) headers['Authorization'] = `Bearer ${options.token}`
@@ -55,6 +94,20 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   })
+
+  if (response.status === 401 && options.token && !isRetry) {
+    if (!refreshPromise) {
+      refreshPromise = refreshAccessToken().finally(() => {
+        refreshPromise = null
+      })
+    }
+    const newToken = await refreshPromise
+    if (newToken) {
+      return request<T>(path, { ...options, token: newToken }, true)
+    }
+    forceLogout()
+    throw new ApiError(401, 'Oturumunuzun süresi doldu, lütfen tekrar giriş yapın.')
+  }
 
   if (response.status === 204) {
     return undefined as T
