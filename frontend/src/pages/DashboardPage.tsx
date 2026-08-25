@@ -60,11 +60,11 @@ export function DashboardPage() {
     if (!token || !account) return
     setExporting(true)
     try {
-      const blob = await transactionApi.exportCsv(token, account.id)
+      const blob = await transactionApi.exportStatement(token, account.id)
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `ekstre-${account.accountNumber}.csv`
+      link.download = `ekstre-${account.accountNumber}.pdf`
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -160,7 +160,7 @@ export function DashboardPage() {
                 disabled={exporting}
                 className="text-xs font-medium text-brand-600 hover:text-brand-700 disabled:opacity-50"
               >
-                {exporting ? 'İndiriliyor...' : 'Ekstre İndir (CSV)'}
+                {exporting ? 'İndiriliyor...' : 'Ekstre İndir (PDF)'}
               </button>
             </div>
 

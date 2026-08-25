@@ -185,7 +185,7 @@ export const transactionApi = {
       body: { amount },
       token,
     }),
-  exportCsv: async (token: string, accountId: number): Promise<Blob> => {
+  exportStatement: async (token: string, accountId: number): Promise<Blob> => {
     const response = await fetchWithRetry(
       `/transactions/account/${accountId}/export`,
       { headers: { Authorization: `Bearer ${token}` } },
