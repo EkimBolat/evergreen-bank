@@ -14,6 +14,8 @@
 
 A RESTful Banking API built with **Spring Boot**, **PostgreSQL**, and **Spring Data JPA** — with a twist: every transaction contributes to real-world environmental impact through our **Nature Points** system.
 
+**🔗 Live demo:** [my-evergreen-bank.onrender.com](https://my-evergreen-bank.onrender.com) — free-tier hosting, so the backend can take ~30-50s to wake up on the first request after a period of inactivity.
+
 ---
 
 ## 🌳 What Makes This Different
@@ -38,22 +40,23 @@ Every deposit, withdrawal, and transfer earns customers **Nature Points**. Once 
 - 🌱 **Nature Points**: gamified sustainability system with anti-abuse safeguards
 - 🏦 **Full banking core**: accounts (Checking/Savings), transfers, transaction history, branches
 - 💳 **Debit & credit card management**: issuance, masked listing, block/activate/permanent cancel, credit limits with charge/pay, automatic statement billing and late-payment interest
-- 🖥️ **React web frontend**: login/register/2FA, dashboard (balance, transfers, deposit/withdraw, live notifications), card management — served via nginx, no separate setup needed
+- 🖥️ **React web frontend**: login/register/2FA (setup + verify), dashboard (balance, transfers, deposit/withdraw, live notifications), card management — served via nginx, no separate setup needed
+- 🛠️ **Admin panel**: customer & branch management, account opening, and a full audit log viewer, gated by ADMIN role on both frontend and API
 - ⏰ **Scheduled recurring transfers** (daily/weekly/monthly), processed via nightly batch job
 - 📈 **Monthly interest accrual** for savings accounts, processed via nightly batch job
 - 🔔 **In-app notifications**, pushed live over WebSocket (STOMP) in addition to REST polling
-- 📄 **CSV statement export** for account transaction history
+- 📄 **PDF statement export** for account transaction history, generated server-side with Apache PDFBox
 - 🐳 **Dockerized**, fully tested (unit + integration), documented via Swagger
 
 ---
 
 ## 🛠️ Tech Stack
 
-**Backend:** Java 21 · Spring Boot 4.1.0 · PostgreSQL · Spring Data JPA · Spring Security (JWT) · WebSocket (STOMP) · Maven
+**Backend:** Java 21 · Spring Boot 4.1.0 · PostgreSQL · Spring Data JPA · Spring Security (JWT) · WebSocket (STOMP) · Apache PDFBox · Maven
 
 **Frontend:** React · TypeScript · Vite · Tailwind CSS · nginx (production)
 
-**Infra:** Docker Compose (db + backend + frontend, one command)
+**Infra:** Docker Compose (db + backend + frontend, one command) · deployable as-is to any host that assigns its own port (Render, Railway, Fly.io, …), with CORS and the frontend's API origin configurable via env vars for split (frontend/backend on different domains) deployments
 
 ---
 
@@ -98,9 +101,11 @@ A default admin account is seeded automatically on first startup (see `admin.boo
 - [x] In-App Notifications + Real-Time WebSocket Push
 - [x] Debit & Credit Card Management (Issue / Block / Activate / Permanent Cancel)
 - [x] Credit Card Billing (Statements, Minimum Payment, Late Interest)
-- [x] CSV Statement Export
+- [x] PDF Statement Export
 - [x] TOTP Two-Factor Authentication
 - [x] React Web Frontend (Dockerized, served via nginx)
+- [x] Admin Panel (Customers, Branches, Account Opening, Audit Log)
+- [x] Configurable CORS + API origin for split (multi-host) deployments
 
 ---
 
