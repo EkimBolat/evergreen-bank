@@ -1,5 +1,6 @@
 import { Client, type IMessage } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
+import { API_ORIGIN } from './env'
 import type { NotificationResponse } from './types'
 
 export function connectNotificationSocket(
@@ -7,7 +8,7 @@ export function connectNotificationSocket(
   onNotification: (notification: NotificationResponse) => void,
 ): Client {
   const client = new Client({
-    webSocketFactory: () => new SockJS('/ws'),
+    webSocketFactory: () => new SockJS(`${API_ORIGIN}/ws`),
     connectHeaders: { Authorization: `Bearer ${token}` },
     reconnectDelay: 5000,
     onConnect: () => {

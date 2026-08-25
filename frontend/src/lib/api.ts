@@ -28,8 +28,9 @@ import type {
   TwoFactorVerifyRequest,
 } from './types'
 import { clearStoredAuth, readStoredAuth, writeStoredAuth } from './auth-storage'
+import { API_ORIGIN } from './env'
 
-const API_BASE = '/api/v1'
+const API_BASE = `${API_ORIGIN}/api/v1`
 
 export class ApiError extends Error {
   status: number
