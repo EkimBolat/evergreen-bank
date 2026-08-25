@@ -84,18 +84,17 @@ function forceLogout() {
   }
 }
 
-async function request<T>(path: string, options: RequestOptions = {}, isRetry = false): Promise<T> {
-  const headers: Record<string, string> = {}
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
-  if (options.token) headers['Authorization'] = `Bearer ${options.token}`
+// Shared by request() and any endpoint that needs the raw Response (e.g. blob downloads):
+// on a 401, tries a single silent token refresh-and-retry before giving up and logging out.
+async function fetchWithRetry(
+  path: string,
+  init: RequestInit,
+  token: string | null | undefined,
+  isRetry = false,
+): Promise<Response> {
+  const response = await fetch(`${API_BASE}${path}`, init)
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    method: options.method ?? 'GET',
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  })
-
-  if (response.status === 401 && options.token && !isRetry) {
+  if (response.status === 401 && token && !isRetry) {
     if (!refreshPromise) {
       refreshPromise = refreshAccessToken().finally(() => {
         refreshPromise = null
@@ -103,11 +102,31 @@ async function request<T>(path: string, options: RequestOptions = {}, isRetry = 
     }
     const newToken = await refreshPromise
     if (newToken) {
-      return request<T>(path, { ...options, token: newToken }, true)
+      const headers = new Headers(init.headers)
+      headers.set('Authorization', `Bearer ${newToken}`)
+      return fetchWithRetry(path, { ...init, headers }, newToken, true)
     }
     forceLogout()
     throw new ApiError(401, 'Oturumunuzun süresi doldu, lütfen tekrar giriş yapın.')
   }
+
+  return response
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const headers: Record<string, string> = {}
+  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  if (options.token) headers['Authorization'] = `Bearer ${options.token}`
+
+  const response = await fetchWithRetry(
+    path,
+    {
+      method: options.method ?? 'GET',
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    },
+    options.token,
+  )
 
   if (response.status === 204) {
     return undefined as T
@@ -167,9 +186,11 @@ export const transactionApi = {
       token,
     }),
   exportCsv: async (token: string, accountId: number): Promise<Blob> => {
-    const response = await fetch(`${API_BASE}/transactions/account/${accountId}/export`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    const response = await fetchWithRetry(
+      `/transactions/account/${accountId}/export`,
+      { headers: { Authorization: `Bearer ${token}` } },
+      token,
+    )
     if (!response.ok) {
       throw new ApiError(response.status, `Ekstre indirilemedi (${response.status})`)
     }
