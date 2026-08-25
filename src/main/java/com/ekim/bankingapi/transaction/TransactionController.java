@@ -75,10 +75,10 @@ public class TransactionController {
 
     @GetMapping("/account/{accountId}/export")
     public ResponseEntity<byte[]> exportStatement(@PathVariable Long accountId) {
-        byte[] csv = transactionService.exportStatementCsv(accountId);
+        byte[] pdf = transactionService.exportStatementPdf(accountId);
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/csv"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"statement-account-" + accountId + ".csv\"")
-                .body(csv);
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"statement-account-" + accountId + ".pdf\"")
+                .body(pdf);
     }
 }

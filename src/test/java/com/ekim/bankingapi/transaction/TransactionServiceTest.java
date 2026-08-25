@@ -52,6 +52,8 @@ class TransactionServiceTest {
     void setUp() {
         Customer customer = new Customer();
         customer.setId(1L);
+        customer.setFirstName("Ahmet");
+        customer.setLastName("Yılmaz");
 
         account = new Account();
         account.setId(1L);
@@ -103,7 +105,7 @@ class TransactionServiceTest {
     }
 
     @Test
-    void exportStatementCsv_shouldContainHeaderAndEachTransaction() {
+    void exportStatementPdf_shouldContainAccountAndTransactionDetails() throws Exception {
         Transaction transaction = new Transaction();
         transaction.setAccount(account);
         transaction.setType(TransactionType.DEPOSIT);
@@ -114,19 +116,26 @@ class TransactionServiceTest {
         when(accountService.requireOwnedAccount(1L)).thenReturn(account);
         when(transactionRepository.findByAccountIdOrderByTimestampDesc(1L)).thenReturn(List.of(transaction));
 
-        byte[] csv = transactionService.exportStatementCsv(1L);
-        String content = new String(csv, StandardCharsets.UTF_8);
+        byte[] pdf = transactionService.exportStatementPdf(1L);
 
-        assertThat(content).startsWith("Date,Type,Amount,Balance After,Transfer Id\n");
-        assertThat(content).contains("2026-01-15T10:30,DEPOSIT,100,600,\n");
+        assertThat(pdf).startsWith("%PDF".getBytes(StandardCharsets.US_ASCII));
+
+        try (var document = org.apache.pdfbox.Loader.loadPDF(pdf)) {
+            String text = new org.apache.pdfbox.text.PDFTextStripper().getText(document);
+            assertThat(text).contains("TR1234567890");
+            assertThat(text).contains("Ahmet Yılmaz");
+            assertThat(text).contains("Para Yatırma");
+            assertThat(text).contains("100");
+            assertThat(text).contains("600");
+        }
     }
 
     @Test
-    void exportStatementCsv_shouldThrow_whenAccountNotFound() {
+    void exportStatementPdf_shouldThrow_whenAccountNotFound() {
         when(accountService.requireOwnedAccount(999L))
                 .thenThrow(new ResourceNotFoundException("Account not found with id: 999"));
 
-        assertThatThrownBy(() -> transactionService.exportStatementCsv(999L))
+        assertThatThrownBy(() -> transactionService.exportStatementPdf(999L))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 }
