@@ -17,7 +17,7 @@ export function ProtectedRoute({
   }
 
   if (requireRole && role !== requireRole) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to={role === 'ADMIN' ? '/admin' : '/dashboard'} replace />
   }
 
   return <>{children}</>

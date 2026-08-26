@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AuthProvider } from './lib/auth-context'
+import { useAuth } from './lib/use-auth'
 import { AdminPage } from './pages/AdminPage'
 import { CardsPage } from './pages/CardsPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -9,6 +10,12 @@ import { NaturePage } from './pages/NaturePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { TwoFactorPage } from './pages/TwoFactorPage'
+
+function DefaultRedirect() {
+  const { isAuthenticated, role } = useAuth()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <Navigate to={role === 'ADMIN' ? '/admin' : '/dashboard'} replace />
+}
 
 function App() {
   return (
@@ -20,7 +27,7 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireRole="CUSTOMER">
               <DashboardPage />
             </ProtectedRoute>
           }
@@ -28,7 +35,7 @@ function App() {
         <Route
           path="/cards"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireRole="CUSTOMER">
               <CardsPage />
             </ProtectedRoute>
           }
@@ -36,7 +43,7 @@ function App() {
         <Route
           path="/nature"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireRole="CUSTOMER">
               <NaturePage />
             </ProtectedRoute>
           }
@@ -44,7 +51,7 @@ function App() {
         <Route
           path="/settings"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireRole="CUSTOMER">
               <SettingsPage />
             </ProtectedRoute>
           }
@@ -57,7 +64,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<DefaultRedirect />} />
       </Routes>
     </AuthProvider>
   )

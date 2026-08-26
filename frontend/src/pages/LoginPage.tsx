@@ -35,7 +35,7 @@ export function LoginPage() {
         role: response.role,
         customerId: response.customerId,
       })
-      navigate('/dashboard', { replace: true })
+      navigate(response.role === 'ADMIN' ? '/admin' : '/dashboard', { replace: true })
     } catch (err) {
       setError(friendlyErrorMessage(err, 'Giriş yapılamadı. Lütfen tekrar deneyin.'))
     } finally {
