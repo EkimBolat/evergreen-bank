@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { AuthContext, type AuthContextValue, type AuthState } from './auth-types'
 import { clearStoredAuth, readStoredAuth, writeStoredAuth } from './auth-storage'
-import { setOnTokenRefreshed } from './api'
+import { authApi, setOnTokenRefreshed } from './api'
 
 function emptyState(): AuthState {
   return { token: null, refreshToken: null, email: null, role: null, customerId: null }
@@ -33,7 +33,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ...state,
     isAuthenticated: Boolean(state.token),
     login: (next) => setState(next),
-    logout: () => setState(emptyState()),
+    logout: () => {
+      const token = state.token
+      setState(emptyState())
+      // Best-effort: revokes the refresh token server-side so it can't silently
+      // mint new access tokens after logout. Local state is already cleared either way.
+      if (token) {
+        authApi.logout(token).catch(() => {})
+      }
+    },
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

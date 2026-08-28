@@ -151,6 +151,7 @@ export const authApi = {
     request<AuthResponse>('/auth/register', { method: 'POST', body: payload }),
   verifyTwoFactor: (payload: TwoFactorVerifyRequest) =>
     request<AuthResponse>('/2fa/verify', { method: 'POST', body: payload }),
+  logout: (token: string) => request<void>('/auth/logout', { method: 'POST', token }),
 }
 
 export const twoFactorApi = {
