@@ -214,6 +214,13 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
     }
 
+    public void logout() {
+        User user = currentUser();
+        refreshTokenService.revokeForUser(user.getId());
+        auditLogService.log("User", user.getId(), "LOGOUT", user.getEmail(), "User logged out");
+        log.info("Logout successful: userId={}", user.getId());
+    }
+
     public AuthResponse refresh(String refreshToken) {
         User user = refreshTokenService.validateAndGetUser(refreshToken);
 

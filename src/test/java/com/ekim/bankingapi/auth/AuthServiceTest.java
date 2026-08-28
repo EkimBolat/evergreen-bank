@@ -297,6 +297,21 @@ class AuthServiceTest {
     }
 
     @Test
+    void logout_shouldRevokeCurrentUsersRefreshToken() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+        authenticateAs("ahmet@example.com");
+
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+
+        authService.logout();
+
+        verify(refreshTokenService).revokeForUser(1L);
+    }
+
+    @Test
     void getTwoFactorStatus_shouldReflectCurrentUserState() {
         User user = new User();
         user.setId(1L);

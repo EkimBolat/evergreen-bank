@@ -30,6 +30,11 @@ public class RefreshTokenService {
         return saved.getToken();
     }
 
+    @Transactional
+    public void revokeForUser(Long userId) {
+        refreshTokenRepository.deleteByUserId(userId);
+    }
+
     public User validateAndGetUser(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid refresh token"));
