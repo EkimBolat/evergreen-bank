@@ -9,7 +9,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-6DB33F?logo=springboot&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-A full-stack banking app — Spring Boot + PostgreSQL API, React frontend. Every deposit, withdrawal, and transfer earns **Nature Points**; once a customer earns enough, a real tree gets planted on their behalf.
+Evergreen Bank is a full-stack banking application — a Spring Boot + PostgreSQL API behind a React frontend — built to cover what a real bank actually needs day to day: accounts, transfers, cards, statements, an admin panel, and the security work that goes with all of it. What sets it apart is the **Nature Points** system woven through the everyday banking: every deposit, withdrawal, and transfer earns points toward a real tree, planted on the customer's behalf once they've earned enough.
 
 **🔗 Live demo:** [my-evergreen-bank.onrender.com](https://my-evergreen-bank.onrender.com) — free-tier hosting, first request after a while can take ~30-50s to wake up.
 

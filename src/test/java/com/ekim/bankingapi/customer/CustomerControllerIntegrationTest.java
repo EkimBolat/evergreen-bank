@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -30,7 +31,12 @@ class CustomerControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        // .apply(springSecurity()) registers the real Spring Security filter chain into MockMvc -
+        // without it, authorizeHttpRequests rules never run and every request reaches the
+        // controller unguarded, regardless of the token's role.
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
         // Customer management is admin-only; the JWT here is synthetic (never logged in
         // for real) since JwtAuthFilter trusts the signed token's claims and never re-checks
         // the DB per-request — consistent with this app's stateless JWT design.
