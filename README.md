@@ -13,6 +13,8 @@ Evergreen Bank is a full-stack banking application — a Spring Boot + PostgreSQ
 
 **🔗 Live demo:** [my-evergreen-bank.onrender.com](https://my-evergreen-bank.onrender.com) — free-tier hosting, first request after a while can take ~30-50s to wake up.
 
+Try it as a customer — National ID `12345678910`, password `Deneme1234!` (seeded with a starting balance, a card, and some transaction history).
+
 ---
 
 ## 🔀 Domain Flow
