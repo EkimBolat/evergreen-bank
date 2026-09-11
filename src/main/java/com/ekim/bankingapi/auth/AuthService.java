@@ -11,6 +11,7 @@ import com.ekim.bankingapi.notification.NotificationService;
 import com.ekim.bankingapi.notification.NotificationType;
 import com.ekim.bankingapi.security.JwtService;
 import com.ekim.bankingapi.security.LoginAttemptService;
+import com.ekim.bankingapi.security.PasswordResetService;
 import com.ekim.bankingapi.security.RefreshTokenService;
 import com.ekim.bankingapi.security.TotpService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final LoginAttemptService loginAttemptService;
     private final RefreshTokenService refreshTokenService;
+    private final PasswordResetService passwordResetService;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
     private final TotpService totpService;
@@ -243,6 +245,37 @@ public class AuthService {
                 "Password Changed", "Your account password was changed.");
 
         log.info("Password changed: userId={}", user.getId());
+    }
+
+    public ForgotPasswordResponse requestPasswordReset(ForgotPasswordRequest request) {
+        Customer customer = customerService.findCustomerEntityByNationalId(request.getNationalId());
+        User user = userRepository.findByCustomerId(customer.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("No login account exists for this customer"));
+
+        String token = passwordResetService.createResetToken(user);
+
+        auditLogService.log("User", user.getId(), "PASSWORD_RESET_REQUESTED", user.getEmail(),
+                "Password reset requested");
+        log.info("Password reset requested: userId={}", user.getId());
+
+        // Demo mode: no email service configured, so the token is handed straight back
+        // instead of being emailed - see ForgotPasswordResponse.
+        return new ForgotPasswordResponse(token);
+    }
+
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = passwordResetService.validateAndConsumeToken(request.getToken());
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        refreshTokenService.revokeForUser(user.getId());
+
+        auditLogService.log("User", user.getId(), "PASSWORD_RESET", user.getEmail(),
+                "Password reset via forgot-password flow");
+        notificationService.notify(user.getCustomer().getId(), NotificationType.PASSWORD_CHANGED,
+                "Password Changed", "Your account password was reset.");
+
+        log.info("Password reset completed: userId={}", user.getId());
     }
 
     public AuthResponse refresh(String refreshToken) {

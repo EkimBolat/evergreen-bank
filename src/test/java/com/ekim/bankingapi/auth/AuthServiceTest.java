@@ -11,6 +11,7 @@ import com.ekim.bankingapi.notification.NotificationService;
 import com.ekim.bankingapi.notification.NotificationType;
 import com.ekim.bankingapi.security.JwtService;
 import com.ekim.bankingapi.security.LoginAttemptService;
+import com.ekim.bankingapi.security.PasswordResetService;
 import com.ekim.bankingapi.security.RefreshTokenService;
 import com.ekim.bankingapi.security.TotpService;
 import org.junit.jupiter.api.AfterEach;
@@ -51,6 +52,9 @@ class AuthServiceTest {
 
     @Mock
     private RefreshTokenService refreshTokenService;
+
+    @Mock
+    private PasswordResetService passwordResetService;
 
     @Mock
     private AuditLogService auditLogService;
@@ -358,6 +362,76 @@ class AuthServiceTest {
         assertThat(user.getPassword()).isEqualTo("old-hashed-password");
         verify(userRepository, never()).save(any());
         verify(refreshTokenService, never()).revokeForUser(any());
+    }
+
+    @Test
+    void requestPasswordReset_shouldCreateResetToken_forExistingLoginAccount() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+
+        when(customerService.findCustomerEntityByNationalId("12345678901")).thenReturn(customer);
+        when(userRepository.findByCustomerId(1L)).thenReturn(Optional.of(user));
+        when(passwordResetService.createResetToken(user)).thenReturn("reset-token-abc");
+
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setNationalId("12345678901");
+
+        ForgotPasswordResponse response = authService.requestPasswordReset(request);
+
+        assertThat(response.getResetToken()).isEqualTo("reset-token-abc");
+    }
+
+    @Test
+    void requestPasswordReset_shouldThrow_whenNoLoginAccountExistsForCustomer() {
+        when(customerService.findCustomerEntityByNationalId("12345678901")).thenReturn(customer);
+        when(userRepository.findByCustomerId(1L)).thenReturn(Optional.empty());
+
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setNationalId("12345678901");
+
+        assertThatThrownBy(() -> authService.requestPasswordReset(request))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(passwordResetService, never()).createResetToken(any());
+    }
+
+    @Test
+    void resetPassword_shouldUpdateHash_andRevokeRefreshToken_whenTokenValid() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setCustomer(customer);
+
+        when(passwordResetService.validateAndConsumeToken("valid-token")).thenReturn(user);
+        when(passwordEncoder.encode("new-plain-password")).thenReturn("new-hashed-password");
+
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("valid-token");
+        request.setNewPassword("new-plain-password");
+
+        authService.resetPassword(request);
+
+        assertThat(user.getPassword()).isEqualTo("new-hashed-password");
+        verify(userRepository).save(user);
+        verify(refreshTokenService).revokeForUser(1L);
+        verify(notificationService).notify(eq(1L), eq(NotificationType.PASSWORD_CHANGED), anyString(), anyString());
+    }
+
+    @Test
+    void resetPassword_shouldThrow_whenTokenInvalidOrExpired() {
+        when(passwordResetService.validateAndConsumeToken("bad-token"))
+                .thenThrow(new InvalidCredentialsException("Invalid or expired password reset link"));
+
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setToken("bad-token");
+        request.setNewPassword("new-plain-password");
+
+        assertThatThrownBy(() -> authService.resetPassword(request))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        verify(userRepository, never()).save(any());
     }
 
     @Test
