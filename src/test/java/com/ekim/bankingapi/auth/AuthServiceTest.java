@@ -312,6 +312,55 @@ class AuthServiceTest {
     }
 
     @Test
+    void changePassword_shouldUpdateHash_andRevokeRefreshToken_whenCurrentPasswordCorrect() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setPassword("old-hashed-password");
+        user.setCustomer(customer);
+        authenticateAs("ahmet@example.com");
+
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("old-plain-password", "old-hashed-password")).thenReturn(true);
+        when(passwordEncoder.encode("new-plain-password")).thenReturn("new-hashed-password");
+
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("old-plain-password");
+        request.setNewPassword("new-plain-password");
+
+        authService.changePassword(request);
+
+        assertThat(user.getPassword()).isEqualTo("new-hashed-password");
+        verify(userRepository).save(user);
+        verify(refreshTokenService).revokeForUser(1L);
+        verify(notificationService).notify(eq(1L), eq(NotificationType.PASSWORD_CHANGED), anyString(), anyString());
+    }
+
+    @Test
+    void changePassword_shouldThrow_whenCurrentPasswordIsWrong() {
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("ahmet@example.com");
+        user.setPassword("old-hashed-password");
+        user.setCustomer(customer);
+        authenticateAs("ahmet@example.com");
+
+        when(userRepository.findByEmail("ahmet@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong-current-password", "old-hashed-password")).thenReturn(false);
+
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("wrong-current-password");
+        request.setNewPassword("new-plain-password");
+
+        assertThatThrownBy(() -> authService.changePassword(request))
+                .isInstanceOf(InvalidRequestException.class);
+
+        assertThat(user.getPassword()).isEqualTo("old-hashed-password");
+        verify(userRepository, never()).save(any());
+        verify(refreshTokenService, never()).revokeForUser(any());
+    }
+
+    @Test
     void getTwoFactorStatus_shouldReflectCurrentUserState() {
         User user = new User();
         user.setId(1L);

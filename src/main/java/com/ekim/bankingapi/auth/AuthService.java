@@ -221,6 +221,30 @@ public class AuthService {
         log.info("Logout successful: userId={}", user.getId());
     }
 
+    public void changePassword(ChangePasswordRequest request) {
+        User user = currentUser();
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            // 400, not 401: the caller IS authenticated (valid token) - this is a rejected
+            // business input, not an auth failure. A 401 here would make the frontend's
+            // token-refresh-then-logout handling misfire and force-log the user out.
+            throw new InvalidRequestException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Password change invalidates other sessions - the refresh token that would otherwise
+        // let a stolen/leaked one silently keep minting new access tokens.
+        refreshTokenService.revokeForUser(user.getId());
+
+        auditLogService.log("User", user.getId(), "PASSWORD_CHANGED", user.getEmail(), "Password changed");
+        notificationService.notify(user.getCustomer().getId(), NotificationType.PASSWORD_CHANGED,
+                "Password Changed", "Your account password was changed.");
+
+        log.info("Password changed: userId={}", user.getId());
+    }
+
     public AuthResponse refresh(String refreshToken) {
         User user = refreshTokenService.validateAndGetUser(refreshToken);
 

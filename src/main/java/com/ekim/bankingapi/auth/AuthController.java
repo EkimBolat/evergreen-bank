@@ -39,4 +39,10 @@ public class AuthController {
         authService.logout();
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(request);
+        return ResponseEntity.noContent().build();
+    }
 }
