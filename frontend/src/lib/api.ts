@@ -9,6 +9,7 @@ import type {
   CardIssuedResponse,
   CardResponse,
   CardType,
+  ChangePasswordRequest,
   CreditCardStatementResponse,
   CreditCardTransactionResponse,
   CustomerRequest,
@@ -152,6 +153,8 @@ export const authApi = {
   verifyTwoFactor: (payload: TwoFactorVerifyRequest) =>
     request<AuthResponse>('/2fa/verify', { method: 'POST', body: payload }),
   logout: (token: string) => request<void>('/auth/logout', { method: 'POST', token }),
+  changePassword: (token: string, payload: ChangePasswordRequest) =>
+    request<void>('/auth/change-password', { method: 'POST', body: payload, token }),
 }
 
 export const twoFactorApi = {

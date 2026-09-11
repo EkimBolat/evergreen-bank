@@ -11,6 +11,7 @@ const TRANSLATIONS: Array<[RegExp, string]> = [
   [/daily withdrawal limit exceeded/i, 'Günlük çekim limitiniz aşıldı.'],
   [/monthly withdrawal limit exceeded/i, 'Aylık çekim limitiniz aşıldı.'],
   [/invalid national id or password/i, 'T.C. Kimlik No veya şifre hatalı.'],
+  [/current password is incorrect/i, 'Mevcut şifreniz hatalı.'],
   [/invalid two-factor code/i, 'Doğrulama kodu hatalı.'],
   [/invalid or expired two-factor session/i, 'Doğrulama oturumunun süresi doldu, lütfen tekrar giriş yapın.'],
   [/two-factor authentication is already enabled/i, 'İki adımlı doğrulama zaten açık.'],

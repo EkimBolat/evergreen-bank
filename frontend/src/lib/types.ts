@@ -28,6 +28,11 @@ export interface TwoFactorVerifyRequest {
   code: string
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+}
+
 export interface TwoFactorStatusResponse {
   enabled: boolean
 }

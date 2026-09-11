@@ -2,7 +2,7 @@ import QRCode from 'qrcode'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Layout } from '../components/Layout'
 import { Badge, Button, Card, ErrorBanner, Input, Label } from '../components/ui'
-import { twoFactorApi } from '../lib/api'
+import { authApi, twoFactorApi } from '../lib/api'
 import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
 
@@ -195,7 +195,99 @@ export function SettingsPage() {
             </div>
           )}
         </Card>
+
+        <PasswordChangeCard />
       </div>
     </Layout>
+  )
+}
+
+function PasswordChangeCard() {
+  const { token } = useAuth()
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    setError(null)
+    setSuccess(null)
+
+    if (newPassword !== confirmPassword) {
+      setError('Yeni şifreler birbiriyle eşleşmiyor.')
+      return
+    }
+
+    if (!token) return
+    setSubmitting(true)
+    try {
+      await authApi.changePassword(token, { currentPassword, newPassword })
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setSuccess('Şifreniz değiştirildi.')
+    } catch (err) {
+      setError(friendlyErrorMessage(err, 'Şifre değiştirilemedi.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Card className="p-6">
+      <h2 className="text-sm font-semibold text-ink-900">Şifre Değiştir</h2>
+
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        {error && <ErrorBanner message={error} />}
+        {success && (
+          <div className="rounded-xl border border-brand-500/20 bg-brand-50 px-4 py-3 text-sm font-medium text-brand-700">
+            {success}
+          </div>
+        )}
+
+        <div>
+          <Label htmlFor="current-password">Mevcut Şifre</Label>
+          <Input
+            id="current-password"
+            type="password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="new-password">Yeni Şifre</Label>
+          <Input
+            id="new-password"
+            type="password"
+            autoComplete="new-password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="confirm-password">Yeni Şifre (Tekrar)</Label>
+          <Input
+            id="confirm-password"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        <Button type="submit" loading={submitting}>
+          Şifreyi Değiştir
+        </Button>
+      </form>
+    </Card>
   )
 }
