@@ -33,6 +33,19 @@ export interface ChangePasswordRequest {
   newPassword: string
 }
 
+export interface ForgotPasswordRequest {
+  nationalId: string
+}
+
+export interface ForgotPasswordResponse {
+  resetToken: string
+}
+
+export interface ResetPasswordRequest {
+  token: string
+  newPassword: string
+}
+
 export interface TwoFactorStatusResponse {
   enabled: boolean
 }

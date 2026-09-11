@@ -14,10 +14,13 @@ import type {
   CreditCardTransactionResponse,
   CustomerRequest,
   CustomerResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
   LoginRequest,
   NotificationResponse,
   Page,
   RegisterRequest,
+  ResetPasswordRequest,
   ScheduledTransferRequest,
   ScheduledTransferResponse,
   TransactionResponse,
@@ -155,6 +158,10 @@ export const authApi = {
   logout: (token: string) => request<void>('/auth/logout', { method: 'POST', token }),
   changePassword: (token: string, payload: ChangePasswordRequest) =>
     request<void>('/auth/change-password', { method: 'POST', body: payload, token }),
+  forgotPassword: (payload: ForgotPasswordRequest) =>
+    request<ForgotPasswordResponse>('/auth/forgot-password', { method: 'POST', body: payload }),
+  resetPassword: (payload: ResetPasswordRequest) =>
+    request<void>('/auth/reset-password', { method: 'POST', body: payload }),
 }
 
 export const twoFactorApi = {

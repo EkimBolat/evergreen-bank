@@ -62,7 +62,12 @@ export function LoginPage() {
         </div>
 
         <div>
-          <Label htmlFor="password">Şifre</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Şifre</Label>
+            <Link to="/forgot-password" className="mb-1.5 text-xs font-medium text-brand-600 hover:text-brand-700">
+              Şifremi unuttum
+            </Link>
+          </div>
           <Input
             id="password"
             type="password"
