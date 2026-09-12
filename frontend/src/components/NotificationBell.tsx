@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { notificationApi } from '../lib/api'
 import { useAuth } from '../lib/use-auth'
 import { connectNotificationSocket } from '../lib/ws'
+import { LoadingState } from './ui'
 import type { NotificationResponse } from '../lib/types'
 
 export function NotificationBell() {
@@ -91,7 +92,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-2xl border border-ink-200 bg-white shadow-lg">
+        <div className="absolute right-0 z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-ink-200 bg-white shadow-lg">
           <div className="flex items-center justify-between border-b border-ink-100 px-4 py-3">
             <span className="text-sm font-semibold text-ink-900">Bildirimler</span>
             {notifications.some((n) => !n.read) && (
@@ -106,7 +107,7 @@ export function NotificationBell() {
           </div>
 
           <div className="max-h-80 overflow-y-auto">
-            {loading && <p className="px-4 py-6 text-center text-sm text-ink-400">Yükleniyor...</p>}
+            {loading && <LoadingState compact />}
             {!loading && notifications.length === 0 && (
               <p className="px-4 py-6 text-center text-sm text-ink-400">Henüz bildirim yok</p>
             )}
