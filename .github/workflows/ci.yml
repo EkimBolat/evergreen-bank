@@ -49,3 +49,30 @@ jobs:
           JWT_SECRET: test-secret-key-for-ci-pipeline-only-not-for-production-use
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/banking_db
         run: mvn clean package -DskipTests
+
+  frontend-build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check and build
+        run: npm run build
