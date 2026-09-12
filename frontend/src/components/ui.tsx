@@ -58,6 +58,42 @@ export function Button({
   )
 }
 
+export function Spinner({ className = 'h-5 w-5 text-brand-600' }: { className?: string }) {
+  return (
+    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3.5" />
+      <path
+        className="opacity-90"
+        d="M22 12a10 10 0 0 0-10-10"
+        stroke="currentColor"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+export function LoadingState({
+  label = 'Yükleniyor...',
+  compact = false,
+  className = '',
+}: {
+  label?: string
+  compact?: boolean
+  className?: string
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center justify-center gap-3 text-ink-400 ${
+        compact ? 'py-8' : 'py-16'
+      } ${className}`}
+    >
+      <Spinner className={compact ? 'h-5 w-5 text-brand-500' : 'h-7 w-7 text-brand-500'} />
+      <p className="text-sm font-medium">{label}</p>
+    </div>
+  )
+}
+
 export function ErrorBanner({ message }: { message: string }) {
   return (
     <div className="rounded-xl border border-danger-500/20 bg-danger-50 px-4 py-3 text-sm font-medium text-danger-600">

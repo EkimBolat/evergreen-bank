@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Layout } from '../components/Layout'
-import { Button, Card, ErrorBanner, Input, Label } from '../components/ui'
+import { Button, Card, ErrorBanner, Input, Label, LoadingState } from '../components/ui'
 import { adminAccountApi, auditLogApi, branchApi, customerApi } from '../lib/api'
 import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
@@ -188,7 +188,7 @@ function CustomersTab() {
 
       <Card>
         {loading ? (
-          <p className="p-5 text-sm text-ink-500">Yükleniyor...</p>
+          <LoadingState compact />
         ) : customers.length === 0 ? (
           <p className="p-5 text-sm text-ink-500">Henüz müşteri yok.</p>
         ) : (
@@ -409,7 +409,7 @@ function BranchesTab() {
 
       <Card>
         {loading ? (
-          <p className="p-5 text-sm text-ink-500">Yükleniyor...</p>
+          <LoadingState compact />
         ) : branches.length === 0 ? (
           <p className="p-5 text-sm text-ink-500">Henüz şube yok.</p>
         ) : (
@@ -487,7 +487,7 @@ function AuditLogTab() {
 
       <Card>
         {loading ? (
-          <p className="p-5 text-sm text-ink-500">Yükleniyor...</p>
+          <LoadingState compact />
         ) : logs.length === 0 ? (
           <p className="p-5 text-sm text-ink-500">Henüz kayıt yok.</p>
         ) : (

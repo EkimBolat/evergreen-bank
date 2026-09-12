@@ -3,7 +3,7 @@ import { DepositWithdrawForm } from '../components/DepositWithdrawForm'
 import { Layout } from '../components/Layout'
 import { ScheduledTransferPanel } from '../components/ScheduledTransferPanel'
 import { TransferForm } from '../components/TransferForm'
-import { Card } from '../components/ui'
+import { Card, LoadingState } from '../components/ui'
 import { accountApi, transactionApi, ApiError } from '../lib/api'
 import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
@@ -78,7 +78,7 @@ export function DashboardPage() {
 
   return (
     <Layout>
-      {loading && <p className="text-sm text-ink-500">Yükleniyor...</p>}
+      {loading && <LoadingState />}
 
       {!loading && notFound && (
         <Card className="p-8 text-center">

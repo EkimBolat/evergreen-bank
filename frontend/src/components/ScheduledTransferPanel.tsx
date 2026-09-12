@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Button, ErrorBanner, Input, Label } from './ui'
+import { Button, ErrorBanner, Input, Label, LoadingState } from './ui'
 import { accountApi, scheduledTransferApi, ApiError } from '../lib/api'
 import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
@@ -154,7 +154,7 @@ export function ScheduledTransferPanel({ account }: { account: AccountResponse }
       )}
 
       {loading ? (
-        <p className="px-5 py-8 text-center text-sm text-ink-400">Yükleniyor...</p>
+        <LoadingState compact />
       ) : scheduled.length === 0 ? (
         <p className="px-5 py-8 text-center text-sm text-ink-400">Henüz planlanmış bir otomatik transfer yok.</p>
       ) : (

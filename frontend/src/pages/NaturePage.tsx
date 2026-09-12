@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Layout } from '../components/Layout'
-import { Card } from '../components/ui'
+import { Card, LoadingState } from '../components/ui'
 import { customerApi, natureApi } from '../lib/api'
 import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
@@ -46,7 +46,7 @@ export function NaturePage() {
 
   return (
     <Layout>
-      {loading && <p className="text-sm text-ink-500">Yükleniyor...</p>}
+      {loading && <LoadingState />}
 
       {!loading && error && (
         <Card className="p-8 text-center">

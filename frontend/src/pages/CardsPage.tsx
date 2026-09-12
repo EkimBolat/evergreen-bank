@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Layout } from '../components/Layout'
-import { Button, Card, ErrorBanner, Input, Label } from '../components/ui'
+import { Button, Card, ErrorBanner, Input, Label, LoadingState } from '../components/ui'
 import { accountApi, cardApi, creditCardApi, ApiError } from '../lib/api'
 import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
@@ -130,7 +130,7 @@ export function CardsPage() {
         )}
       </div>
 
-      {loading && <p className="text-sm text-ink-500">Yükleniyor...</p>}
+      {loading && <LoadingState />}
 
       {!loading && notFound && (
         <Card className="p-8 text-center">
@@ -495,7 +495,7 @@ function StatementsPanel({ cardId }: { cardId: number }) {
 
   return (
     <div className="mt-2 rounded-xl border border-ink-200 bg-white p-4 text-sm">
-      {loading && <p className="text-xs text-ink-400">Yükleniyor...</p>}
+      {loading && <LoadingState compact />}
 
       {!loading && (
         <>

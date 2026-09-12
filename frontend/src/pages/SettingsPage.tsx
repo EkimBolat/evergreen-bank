@@ -1,7 +1,7 @@
 import QRCode from 'qrcode'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Layout } from '../components/Layout'
-import { Badge, Button, Card, ErrorBanner, Input, Label } from '../components/ui'
+import { Badge, Button, Card, ErrorBanner, Input, Label, LoadingState } from '../components/ui'
 import { authApi, twoFactorApi } from '../lib/api'
 import { friendlyErrorMessage } from '../lib/errors'
 import { useAuth } from '../lib/use-auth'
@@ -107,7 +107,7 @@ export function SettingsPage() {
             {!loading && <Badge tone={enabled ? 'brand' : 'ink'}>{enabled ? 'Aktif' : 'Kapalı'}</Badge>}
           </div>
 
-          {loading && <p className="mt-4 text-sm text-ink-500">Yükleniyor...</p>}
+          {loading && <LoadingState compact />}
 
           {!loading && (
             <div className="mt-4 space-y-4">
